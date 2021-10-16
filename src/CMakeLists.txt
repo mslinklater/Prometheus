@@ -8,6 +8,10 @@ find_package(Vulkan REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${Vulkan_INCLUDE_DIRS})
 
+if(${CMAKE_BUILD_TYPE} EQUAL Debug)
+	set(CMAKE_C_FLAGS "-DDEBUG")
+endif()
+
 set(SOURCE_FILES main.cpp errors.cpp)
 
 add_subdirectory("renderer")

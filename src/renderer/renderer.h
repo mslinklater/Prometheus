@@ -25,8 +25,17 @@ public:
 	EError Shutdown();
 
 private:
+
 	SDL_Window* window;
 
 	VkInstance instance;
     VkSurfaceKHR surface;
+
+    VkApplicationInfo appInfo;
+    VkInstanceCreateInfo instInfo;
+
+    std::vector<const char*> layers;
+	std::vector<const char*> extensions;
+	std::vector<VkPhysicalDevice> physicalDevices;
+	std::vector<VkPhysicalDeviceProperties> physicalDeviceProperties;
 };
