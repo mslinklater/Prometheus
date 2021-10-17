@@ -6,38 +6,37 @@
 #include <SDL2/SDL_vulkan.h>
 
 #include "renderer.h"
+#include "log.h"
 
 EError Renderer::Init()
 {
+	LOGINFO("Renderer:Init()");
+
     // Create an SDL window that supports Vulkan rendering.
     if(SDL_Init(SDL_INIT_VIDEO) != 0) 
     {
-        std::cout << "Could not initialize SDL." << std::endl;
-        return EError::SDL_UnableToInitialize;
+		return ErrorLogAndReturn(EError::SDL_UnableToInitialize);
     }
 
     window = SDL_CreateWindow("FaffAboutEngine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_VULKAN);
 
     if(window == NULL) 
     {
-        std::cout << "Could not create SDL window." << std::endl;
-        return EError::SDL_CouldNotCreateWindow;
+		return ErrorLogAndReturn(EError::SDL_CouldNotCreateWindow);
     }
 
     // Get WSI extensions from SDL (we can add more if we like - we just can't remove these)
     unsigned extension_count;
     if(!SDL_Vulkan_GetInstanceExtensions(window, &extension_count, NULL)) 
     {
-        std::cout << "Could not get the number of required instance extensions from SDL." << std::endl;
-        return EError::SDL_CouldNotGetRequiredVulkanExtensions;
+		return ErrorLogAndReturn(EError::SDL_CouldNotGetRequiredVulkanExtensions);
     }
 
 	extensions.resize(extension_count);
 
     if(!SDL_Vulkan_GetInstanceExtensions(window, &extension_count, extensions.data())) 
     {
-        std::cout << "Could not get the names of required instance extensions from SDL." << std::endl;
-        return EError::SDL_CouldNotGetRequiredVulkanExtensions;
+		return ErrorLogAndReturn(EError::SDL_CouldNotGetRequiredVulkanExtensions);
     }
 
 	// Create instance
@@ -71,13 +70,11 @@ EError Renderer::Init()
     VkResult result = vkCreateInstance(&instInfo, NULL, &instance);
     if(result == VK_ERROR_INCOMPATIBLE_DRIVER) 
 	{
-        std::cout << "Unable to find a compatible Vulkan Driver." << std::endl;
-        return EError::Vulkan_UnableToFindDriver;
+		return ErrorLogAndReturn(EError::Vulkan_UnableToFindDriver);
     } 
 	else if(result) 
 	{
-        std::cout << "Could not create a Vulkan instance (for unknown reasons)." << std::endl;
-        return EError::Vulkan_CouldNotCreateInstance;
+		return ErrorLogAndReturn(EError::Vulkan_CouldNotCreateInstance);
     }
 
 	// Enumerate physical devices
@@ -86,25 +83,28 @@ EError Renderer::Init()
 	result = vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, nullptr);
 	if(result)
 	{
-		std::cout << "Could not enumerate Vulkan physical device count" << std::endl;
-		return EError::Vulkan_CouldNotEnumeratePhysicalDevices;
+		return ErrorLogAndReturn(EError::Vulkan_CouldNotEnumeratePhysicalDevices);
 	}
+
 	physicalDevices.resize(physicalDeviceCount);
-	physicalDeviceProperties.resize(physicalDeviceCount);
-	result = vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, &physicalDevices[0]);
+
+	std::vector<VkPhysicalDevice> vulkanPhysicalDevices(physicalDeviceCount);
+
+	result = vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, &vulkanPhysicalDevices[0]);
 	if(result)
 	{
-		for(uint32_t iDevice=0 ; iDevice < physicalDeviceCount ; iDevice++)
-		{
-			
-		}
+		return ErrorLogAndReturn(EError::Vulkan_CouldNotEnumeratePhysicalDevices);
+	}
+
+	for(uint32_t iDevice=0 ; iDevice < physicalDeviceCount ; iDevice++)
+	{
+		physicalDevices[iDevice].SetPhysicalDevice(vulkanPhysicalDevices[iDevice]);
 	}
 
     // Create a Vulkan surface for rendering
     if(!SDL_Vulkan_CreateSurface(window, instance, &surface)) 
 	{
-        std::cout << "Could not create a Vulkan surface." << std::endl;
-        return EError::Vulkan_CouldNotCreateSurface;
+		return ErrorLogAndReturn(EError::SDL_CouldNotCreateVulkanSurface);
     }
 
 	return EError::OK;
@@ -118,4 +118,9 @@ EError Renderer::Shutdown()
     vkDestroyInstance(instance, NULL);
 
 	return EError::OK;
+}
+
+void Renderer::LogPhysicalDeviceProperties(VkPhysicalDeviceProperties* pProperties)
+{
+
 }

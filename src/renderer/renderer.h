@@ -13,6 +13,8 @@
 
 #include <errors.h>
 
+#include "rendererphysicaldevice.h"
+
 class SDL_Window;
 
 class Renderer
@@ -25,6 +27,7 @@ public:
 	EError Shutdown();
 
 private:
+	void LogPhysicalDeviceProperties(VkPhysicalDeviceProperties* pDevice);
 
 	SDL_Window* window;
 
@@ -36,6 +39,6 @@ private:
 
     std::vector<const char*> layers;
 	std::vector<const char*> extensions;
-	std::vector<VkPhysicalDevice> physicalDevices;
-	std::vector<VkPhysicalDeviceProperties> physicalDeviceProperties;
+
+	std::vector<RendererPhysicalDevice> physicalDevices;
 };

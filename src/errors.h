@@ -11,6 +11,7 @@ enum EError
 	SDL_UnableToInitialize,
 	SDL_CouldNotCreateWindow,
 	SDL_CouldNotGetRequiredVulkanExtensions,
+	SDL_CouldNotCreateVulkanSurface,
 
 	// Vulkan
 
@@ -22,4 +23,4 @@ enum EError
 	Unknown,
 };
 
-void Error_Log(std::string errorString);
+EError ErrorLogAndReturn(EError error);

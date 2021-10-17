@@ -12,7 +12,7 @@ if(${CMAKE_BUILD_TYPE} EQUAL Debug)
 	set(CMAKE_C_FLAGS "-DDEBUG")
 endif()
 
-set(SOURCE_FILES main.cpp errors.cpp)
+set(SOURCE_FILES main.cpp errors.cpp log.cpp)
 
 add_subdirectory("renderer")
 
