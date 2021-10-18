@@ -99,7 +99,11 @@ EError Renderer::Init()
 	for(uint32_t iDevice=0 ; iDevice < physicalDeviceCount ; iDevice++)
 	{
 		physicalDevices[iDevice].SetPhysicalDevice(vulkanPhysicalDevices[iDevice]);
+		physicalDevices[iDevice].LogDeviceInfo();
 	}
+
+	// TODO: choose which physical device to use and create the logical device
+	
 
     // Create a Vulkan surface for rendering
     if(!SDL_Vulkan_CreateSurface(window, instance, &surface)) 

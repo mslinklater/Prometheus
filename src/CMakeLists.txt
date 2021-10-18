@@ -12,9 +12,10 @@ if(${CMAKE_BUILD_TYPE} EQUAL Debug)
 	set(CMAKE_C_FLAGS "-DDEBUG")
 endif()
 
-set(SOURCE_FILES main.cpp errors.cpp log.cpp)
+set(SOURCE_FILES main.cpp errors.cpp log.cpp config.cpp)
 
 add_subdirectory("renderer")
+add_subdirectory("supereasyjson")
 
 add_executable(faffaboutengine ${SOURCE_FILES})
 target_link_libraries(faffaboutengine ${SDL2_LIBRARIES} ${Vulkan_LIBRARIES})

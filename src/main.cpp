@@ -35,9 +35,12 @@ Create and destroy a Vulkan surface on an SDL window.
 #include <vector>
 
 #include "renderer/renderer.h"
+#include "config.h"
 
-int main()
+int main(int argc, char *argv[])
 {
+	Config::Instance()->ParseCommandLine(argc, argv);
+	
     Renderer renderer;
 
     renderer.Init();

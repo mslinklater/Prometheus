@@ -11,7 +11,8 @@ public:
 
 	void SetPhysicalDevice(VkPhysicalDevice deviceIn);
 
-
+	void LogDeviceName();
+	void LogDeviceInfo();
 private:
 	VkPhysicalDevice device;
 	VkPhysicalDeviceProperties properties;

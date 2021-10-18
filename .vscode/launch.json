@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/faffaboutengine",
-            "args": [],
+            "args": ["-testbool"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
