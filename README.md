@@ -1,5 +1,5 @@
-# FaffAboutEngine
-A bunch of stuff to faff about with
+# Prometheus
+A selectio of tech glued together in a framework. Used for prototyping or experimentation.
 
 ## Required
 
