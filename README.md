@@ -1,8 +1,4 @@
 # Prometheus
-A selectio of tech glued together in a framework. Used for prototyping or experimentation.
+A selection of tech glued together in a framework. Used for prototyping or experimentation. It's not meant to be an engine.
 
-## Required
 
-* Vulkan renderer
-* Physics engine (from that Kindle series)
-* DearIMGUI
