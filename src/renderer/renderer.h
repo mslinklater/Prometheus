@@ -11,7 +11,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <errors.h>
+#include "system/errors.h"
 
 #include "rendererphysicaldevice.h"
 
@@ -19,26 +19,26 @@ class SDL_Window;
 
 class Renderer
 {
-public:
-	Renderer(){}
-	virtual ~Renderer(){}
+  public:
+    Renderer() {}
+    virtual ~Renderer() {}
 
-	EError Init();
-	EError Shutdown();
+    EError Init();
+    EError Shutdown();
 
-private:
-	void LogPhysicalDeviceProperties(VkPhysicalDeviceProperties* pDevice);
+  private:
+    void LogPhysicalDeviceProperties(VkPhysicalDeviceProperties *pDevice);
 
-	SDL_Window* window;
+    SDL_Window *window;
 
-	VkInstance instance;
+    VkInstance instance;
     VkSurfaceKHR surface;
 
     VkApplicationInfo appInfo;
     VkInstanceCreateInfo instInfo;
 
-    std::vector<const char*> layers;
-	std::vector<const char*> extensions;
+    std::vector<const char *> layers;
+    std::vector<const char *> extensions;
 
-	std::vector<RendererPhysicalDevice> physicalDevices;
+    std::vector<RendererPhysicalDevice> physicalDevices;
 };
