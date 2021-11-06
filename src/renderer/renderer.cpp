@@ -111,6 +111,7 @@ EError Renderer::Init()
     if (Config::Instance()->StringExists("vulkan.device.preferred"))
     {
         // find the preferred device
+        std::string preferred = Config::Instance()->GetString("vulkan.device.preferred");
     }
     else
     {

@@ -16,6 +16,7 @@ class Config
     void SetBool(std::string key, bool value);
 
     bool StringExists(std::string key);
+    std::string GetString(std::string key);
 
   private:
     void Initialise();

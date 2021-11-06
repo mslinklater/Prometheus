@@ -2,9 +2,9 @@
 #include "log.h"
 #include <string.h>
 
-static Config *instance = nullptr;
+static Config* instance = nullptr;
 
-Config *Config::Instance()
+Config* Config::Instance()
 {
     if (instance == nullptr)
     {
@@ -16,7 +16,7 @@ Config *Config::Instance()
     return instance;
 }
 
-void Config::ParseCommandLine(int argc, char *argv[])
+void Config::ParseCommandLine(int argc, char* argv[])
 {
     LOGINFO("Config:ParseCommandLine");
     // find all the booleans
@@ -33,9 +33,22 @@ void Config::ParseCommandLine(int argc, char *argv[])
 
 void Config::Initialise()
 {
-    // load from JSON file
+    // load from file
 
-    // load boolean array
+    FILE* hFile = fopen("config.txt", "r");
+
+    if (hFile != nullptr)
+    {
+        char* pFileBuffer;
+        fseek(hFile, 0, SEEK_END);
+        long fileSize = ftell(hFile);
+        pFileBuffer = (char*)malloc(fileSize);
+        fseek(hFile, 0, SEEK_SET);
+        long bytesRead = fread(pFileBuffer, 1, fileSize, hFile);
+
+        free(pFileBuffer);
+        fclose(hFile);
+    }
 }
 
 bool Config::GetBool(std::string key)
@@ -45,6 +58,15 @@ bool Config::GetBool(std::string key)
         return boolSettings[key];
     }
     return false;
+}
+
+std::string Config::GetString(std::string key)
+{
+    if (stringSettings.find(key) != stringSettings.end())
+    {
+        return stringSettings[key];
+    }
+    return "INVALID";
 }
 
 void Config::SetBool(std::string key, bool value)

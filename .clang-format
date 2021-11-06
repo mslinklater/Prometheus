@@ -2,3 +2,4 @@ IndentWidth: 4
 BreakBeforeBraces: Allman
 ColumnLimit: 160
 AllowShortFunctionsOnASingleLine: Inline
+PointerAlignment: Left

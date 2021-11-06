@@ -8,7 +8,7 @@
             "name": "launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/faffaboutengine",
+            "program": "${workspaceFolder}/build/prometheus",
             "args": ["-testbool"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
