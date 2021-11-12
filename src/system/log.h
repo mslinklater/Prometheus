@@ -20,6 +20,9 @@
 #define LOGERROR(x) Log::Instance()->Error(x)
 #define LOGERRORF(x, ...) Log::Instance()->Errorf(x, __VA_ARGS__)
 
+#define LOGFATAL(x) Log::Instance()->Fatal(x)
+#define LOGFATALF(x, ...) Log::Instance()->Fatalf(x, __VA_ARGS__)
+
 class Log
 {
 public:
@@ -27,7 +30,8 @@ public:
 	{
 		kInfo,
 		kWarning,
-		kError
+		kError,
+		kFatal
 	};
 	
 	struct LogLine
@@ -51,7 +55,10 @@ public:
 	
 	void Error(std::string line);
 	void Errorf(const char* fmt, ...);
-	
+
+	void Fatal(std::string line);
+	void Fatalf(const char* fmt, ...);
+
 	int GetLineCount();
 	const LogLine& GetLine(int number);
 	

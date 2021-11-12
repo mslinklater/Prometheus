@@ -46,9 +46,69 @@ void Config::Initialise()
         fseek(hFile, 0, SEEK_SET);
         long bytesRead = fread(pFileBuffer, 1, fileSize, hFile);
 
+        // now parse
+        const char* pRead = pFileBuffer;
+        const char* pLookahead = pRead;
+
+        while (pRead < pFileBuffer + fileSize)
+        {
+            while ((pLookahead < pFileBuffer + fileSize) && (*pLookahead != 0x0a))
+            {
+                // parse line
+                pLookahead++;
+            }
+            // parse the line
+            std::string line = pRead;
+
+            std::string type;
+            std::string key;
+            std::string value;
+
+            FindTypeKeyValue(line, type, key, value);
+
+            if (type == "bool")
+            {
+                boolSettings.emplace(key, (value == "true") ? true : false);
+            }
+            else if (type == "string")
+            {
+                stringSettings.emplace(key, value);
+            }
+            else
+            {
+                LOGFATALF("Config:Unknown line %s", pRead);
+            }
+
+            pRead = pLookahead;
+        }
+
         free(pFileBuffer);
         fclose(hFile);
     }
+}
+
+bool Config::FindTypeKeyValue(const std::string& line, std::string& type, std::string& key, std::string& value)
+{
+    // first lets try to detect malformed setting lines
+
+    size_t openPos = line.find("[");
+    size_t closePos = line.find("]");
+    size_t equalPos = line.find("=");
+    size_t newlinePos = line.find("\n");
+
+    if ((openPos == std::string::npos) || (closePos == std::string::npos) || (equalPos == std::string::npos))
+        return false;
+
+    if ((openPos > closePos) || (closePos > equalPos))
+        return false;
+
+    type = line.substr(openPos + 1, closePos - openPos - 1);
+    key = line.substr(closePos + 1, equalPos - closePos - 1);
+    value = line.substr(equalPos + 1, newlinePos - equalPos - 1);
+
+    LOGINFOF("Found %s %s %s", type.c_str(), key.c_str(), value.c_str());
+
+    return true;
 }
 
 bool Config::GetBool(std::string key)

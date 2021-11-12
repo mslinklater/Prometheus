@@ -164,6 +164,32 @@ void Log::Errorf(const char *fmt, ...)
     printf("Error:%s\n", newLine.content.c_str());
 }
 
+void Log::Fatal(std::string line)
+{
+    LogLine newLine;
+    SplitCategory(line, newLine.category, newLine.content);
+    newLine.type = kFatal;
+
+    AddLine(newLine);
+    printf("Fatal:%s\n", line.c_str());
+    exit(1);
+}
+
+void Log::Fatalf(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, BUFFER_SIZE, fmt, args);
+    va_end(args);
+
+    LogLine newLine;
+    SplitCategory(buffer, newLine.category, newLine.content);
+    newLine.type = kFatal;
+
+    AddLine(newLine);
+    printf("Fatal:%s\n", newLine.content.c_str());
+}
+
 void Log::AddLine(Log::LogLine line)
 {
     if (line.category.size() > 0)
