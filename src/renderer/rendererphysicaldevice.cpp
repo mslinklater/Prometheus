@@ -1,5 +1,6 @@
 #include "rendererphysicaldevice.h"
 #include "system/log.h"
+#include "vulkan/vk_layer_utils.h"
 
 void RendererPhysicalDevice::SetPhysicalDevice(VkPhysicalDevice deviceIn)
 {
@@ -19,7 +20,6 @@ void RendererPhysicalDevice::SetPhysicalDevice(VkPhysicalDevice deviceIn)
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &numQueueFamilies, nullptr);
 	queueFamilyProperties.resize(numQueueFamilies);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &numQueueFamilies, &queueFamilyProperties[0]);
-	
 }
 
 void RendererPhysicalDevice::LogDeviceName()
@@ -32,6 +32,14 @@ void RendererPhysicalDevice::LogDeviceInfo()
 	LOGINFO("--- Vulkan Physical Device Info ---");
 	LOGINFOF("Name: %s", properties.deviceName);
 
+	// Properties
+    LOGINFOF("API Version: %s", StringAPIVersion(properties.apiVersion).c_str());
+
+        // Features
+
+	// Memory properties
+
+	// Queue family properties
 	for(int iQueue=0 ; iQueue<queueFamilyProperties.size() ; iQueue++)
 	{
 		LOGINFO("   --- Queue family ---");

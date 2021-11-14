@@ -70,6 +70,10 @@ void Config::Initialise()
             {
                 boolSettings.emplace(key, (value == "true") ? true : false);
             }
+            else if (type == "int")
+            {
+                intSettings.emplace(key, atoi(value.c_str()));
+            }
             else if (type == "string")
             {
                 stringSettings.emplace(key, value);
@@ -79,7 +83,7 @@ void Config::Initialise()
                 LOGFATALF("Config:Unknown line %s", pRead);
             }
 
-            pRead = pLookahead;
+            pRead = ++pLookahead;
         }
 
         free(pFileBuffer);

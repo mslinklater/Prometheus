@@ -25,4 +25,5 @@ class Config
 
     std::map<std::string, bool> boolSettings;
     std::map<std::string, std::string> stringSettings;
+    std::map<std::string, int> intSettings;
 };
