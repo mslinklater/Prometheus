@@ -5,5 +5,5 @@ A selection of tech glued together in a framework. Used for prototyping or exper
 
 ### Linux
 
-libvulkan-dev
-vulkan-validationlayers-dev
+* libvulkan-dev
+* vulkan-validationlayers-dev
