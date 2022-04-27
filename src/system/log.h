@@ -3,6 +3,8 @@
 //
 // See file 'LICENSE' for license details
 
+// log levels... fatal, error, warning, info, verbose
+
 #pragma once
 
 #include <vector>
@@ -10,6 +12,9 @@
 #include <map>
 #include <set>
 #include <stdarg.h>
+
+#define LOGVERBOSE(x) Log::Instance()->Verbose(x)
+#define LOGVERBOSEF(x, ...) Log::Instance()->Verbosef(x, __VA_ARGS__)
 
 #define LOGINFO(x) Log::Instance()->Info(x)
 #define LOGINFOF(x, ...) Log::Instance()->Infof(x, __VA_ARGS__)
@@ -28,6 +33,7 @@ class Log
 public:
 	enum eLogType
 	{
+		kVerbose,
 		kInfo,
 		kWarning,
 		kError,
@@ -47,6 +53,9 @@ public:
 	
 	void Test();
 	
+	void Verbose(std::string line);
+	void Verbosef(const char* fmt, ...);
+
 	void Info(std::string line);
 	void Infof(const char* fmt, ...);
 	

@@ -5,6 +5,10 @@ project(prometheus)
 find_package(SDL2 REQUIRED)
 find_package(Vulkan REQUIRED)
 
+set(CMAKE_C_FLAGS "-DVK_ENABLE_BETA_EXTENSIONS")
+set(CMAKE_CXX_FLAGS "-DVK_ENABLE_BETA_EXTENSIONS")
+set(CMAKE_BUILD_TYPE Debug)
+
 include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${Vulkan_INCLUDE_DIRS})
 

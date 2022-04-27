@@ -33,11 +33,18 @@ void Config::ParseCommandLine(int argc, char* argv[])
 
 void Config::Initialise()
 {
+    std::string configPath("../config.txt");
+
     // load from file
 
-    FILE* hFile = fopen("config.txt", "r");
+    FILE* hFile = fopen(configPath.c_str(), "r");
 
-    if (hFile != nullptr)
+    if (hFile == nullptr)
+    {
+        LOGERRORF("Config::Unable to load config file '%s'", configPath.c_str());
+        // TODO add exception
+    }
+    else
     {
         char* pFileBuffer;
         fseek(hFile, 0, SEEK_END);
@@ -77,6 +84,11 @@ void Config::Initialise()
             else if (type == "string")
             {
                 stringSettings.emplace(key, value);
+            }
+            else if (type == "category")
+            {
+                LOGINFO("[Config]Found category");
+                // TODO: Add category support
             }
             else
             {
