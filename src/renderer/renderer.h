@@ -1,3 +1,6 @@
+// [+Header]
+// [-Header]
+
 #pragma once
 
 // Enable the WSI extensions
