@@ -4,5 +4,7 @@
 [bool]debug=false
 
 [category]log
-[string]config=info
-[string]renderer=verbose
+[bool]verbose=false
+[bool]info=true
+[bool]warning=true
+[bool]error=true

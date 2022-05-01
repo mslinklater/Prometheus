@@ -30,19 +30,20 @@ class Renderer
     EError Shutdown();
 
   private:
-    void LogPhysicalDeviceProperties(VkPhysicalDeviceProperties *pDevice);
+    void LogInstanceProperties();
 
     SDL_Window *window;
 
     VkInstance instance;
     VkSurfaceKHR surface;
 
-    VkApplicationInfo appInfo;
-    VkInstanceCreateInfo instInfo;
+    VkApplicationInfo applicationInfo;
+    VkInstanceCreateInfo instanceInfo;
 
     std::vector<const char *> enabledLayers;
     std::vector<VkLayerProperties> availableLayers;
     std::vector<const char*> enabledExtensions;
+    std::vector<VkExtensionProperties> availableExtensions;
 
     std::vector<RendererPhysicalDevice> physicalDevices;
 };

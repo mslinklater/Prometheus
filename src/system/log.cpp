@@ -4,6 +4,7 @@
 // See file 'LICENSE' for license details
 
 #include "log.h"
+#include "config.h"
 
 static Log *pInstance = nullptr;
 
@@ -11,7 +12,12 @@ static Log *pInstance = nullptr;
 
 static char buffer[BUFFER_SIZE];
 
-Log::Log() {}
+Log::Log()
+: verboseActive(Config::Instance()->GetBool("log.verbose"))
+, infoActive(Config::Instance()->GetBool("log.info"))
+, warningActive(Config::Instance()->GetBool("log.warning"))
+, errorActive(Config::Instance()->GetBool("log.error"))
+{}
 
 Log::~Log() {}
 
@@ -90,6 +96,9 @@ void Log::Test()
 
 void Log::Verbose(const std::string& line)
 {
+    if(!verboseActive)
+        return;
+
     LogLine newLine;
 
     SplitCategory(line, newLine.category, newLine.content);
@@ -101,6 +110,9 @@ void Log::Verbose(const std::string& line)
 
 void Log::Verbosef(const char *fmt, ...)
 {
+    if(!verboseActive)
+        return;
+
     va_list args;
     va_start(args, fmt);
     vsnprintf(buffer, BUFFER_SIZE, fmt, args);
@@ -116,6 +128,9 @@ void Log::Verbosef(const char *fmt, ...)
 
 void Log::Info(const std::string& line)
 {
+    if(!infoActive)
+        return;
+
     LogLine newLine;
 
     SplitCategory(line, newLine.category, newLine.content);
@@ -127,6 +142,9 @@ void Log::Info(const std::string& line)
 
 void Log::Infof(const char *fmt, ...)
 {
+    if(!infoActive)
+        return;
+
     va_list args;
     va_start(args, fmt);
     vsnprintf(buffer, BUFFER_SIZE, fmt, args);
@@ -142,6 +160,9 @@ void Log::Infof(const char *fmt, ...)
 
 void Log::Warning(const std::string& line)
 {
+    if(!warningActive)
+        return;
+
     LogLine newLine;
     SplitCategory(line, newLine.category, newLine.content);
     newLine.type = kWarning;
@@ -152,6 +173,9 @@ void Log::Warning(const std::string& line)
 
 void Log::Warningf(const char *fmt, ...)
 {
+    if(!warningActive)
+        return;
+
     va_list args;
     va_start(args, fmt);
     vsnprintf(buffer, BUFFER_SIZE, fmt, args);
@@ -167,6 +191,9 @@ void Log::Warningf(const char *fmt, ...)
 
 void Log::Error(const std::string& line)
 {
+    if(!errorActive)
+        return;
+
     LogLine newLine;
     SplitCategory(line, newLine.category, newLine.content);
     newLine.type = kError;
@@ -177,6 +204,9 @@ void Log::Error(const std::string& line)
 
 void Log::Errorf(const char *fmt, ...)
 {
+    if(!errorActive)
+        return;
+
     va_list args;
     va_start(args, fmt);
     vsnprintf(buffer, BUFFER_SIZE, fmt, args);

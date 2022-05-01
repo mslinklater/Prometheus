@@ -83,8 +83,13 @@ private:
 	void AddLine(LogLine line);
 	
 	void RecalculateDisplayedLines();
-	
-	std::vector<LogLine> allLogLines;
+
+    bool verboseActive;
+    bool infoActive;
+    bool warningActive;
+    bool errorActive;
+
+    std::vector<LogLine> allLogLines;
 	std::vector<LogLine> filteredLogLines;
 	std::set<std::string> categories;
 	std::map<std::string, bool> categoryFilter;

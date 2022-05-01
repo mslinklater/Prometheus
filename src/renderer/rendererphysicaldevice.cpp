@@ -35,14 +35,41 @@ void RendererPhysicalDevice::LogDeviceName()
 
 void RendererPhysicalDevice::LogDeviceInfo()
 {
-	LOGINFO("--- Vulkan Physical Device Info ---");
+	LOGINFO("=== Vulkan Physical Device Info ===");
+	LOGINFO("");
+	LOGINFO("--- Properties ---");
+	LOGINFO("");
 	LOGINFOF("Name: %s", properties.deviceName);
 
 	// Properties
-    LOGINFOF("API Version: %s", StringAPIVersion(properties.apiVersion).c_str());
-    LOGINFO("TODO - List all the other properties...");
+    LOGINFOF("API version: %s", StringAPIVersion(properties.apiVersion).c_str());
+    LOGINFOF("Driver version: %s", StringAPIVersion(properties.driverVersion).c_str());
+    LOGINFOF("Vendor id: %04x", properties.vendorID);
+    LOGINFOF("Device id: %04x", properties.deviceID);
+	if(properties.deviceType & VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+	{
+	    LOGINFO("Device type: Integrated GPU");
+	}
+	if(properties.deviceType & VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+	{
+	    LOGINFO("Device type: Discrete GPU");
+	}
+	if(properties.deviceType & VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU)
+	{
+	    LOGINFO("Device type: Virtual GPU");
+	}
+	if(properties.deviceType & VK_PHYSICAL_DEVICE_TYPE_CPU)
+	{
+	    LOGINFO("Device type: CPU");
+	}
+    LOGINFOF("Device name: %s", properties.deviceName);
+
+	LOGINFO("--- Limits ---");
+	LOGINFO("");
 
     // Features
+	LOGINFO("--- Features ---");
+	LOGINFO("");
     LOGINFOF("Feature: robustBufferAccess:%d", features.robustBufferAccess);
     LOGINFOF("Feature: fullDrawIndexUint32:%d", features.fullDrawIndexUint32);
     LOGINFOF("Feature: imageCubeArray:%d", features.imageCubeArray);
