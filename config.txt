@@ -1,6 +1,7 @@
 [category]vulkan
-[string]vulkan.device.preferred=Intel
-[bool]vulkan.debug=false
+[string]device.preferred=Intel
+[bool]devices.loginfo=true
+[bool]debug=false
 
 [category]log
 [string]config=info

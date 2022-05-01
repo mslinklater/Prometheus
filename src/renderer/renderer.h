@@ -40,8 +40,9 @@ class Renderer
     VkApplicationInfo appInfo;
     VkInstanceCreateInfo instInfo;
 
-    std::vector<const char *> layers;
-    std::vector<const char *> extensions;
+    std::vector<const char *> enabledLayers;
+    std::vector<VkLayerProperties> availableLayers;
+    std::vector<const char*> enabledExtensions;
 
     std::vector<RendererPhysicalDevice> physicalDevices;
 };

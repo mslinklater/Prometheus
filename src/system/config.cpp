@@ -65,34 +65,40 @@ void Config::Initialise()
                 pLookahead++;
             }
             // parse the line
-            std::string line = pRead;
+            std::string line(pRead, pLookahead - pRead);
 
             std::string type;
             std::string key;
             std::string value;
 
-            FindTypeKeyValue(line, type, key, value);
+            if(FindTypeKeyValue(line, type, key, value))
+            {
+                std::string fullKey = currentCategory + std::string(".") + key;
 
-            if (type == "bool")
-            {
-                boolSettings.emplace(key, (value == "true") ? true : false);
-            }
-            else if (type == "int")
-            {
-                intSettings.emplace(key, atoi(value.c_str()));
-            }
-            else if (type == "string")
-            {
-                stringSettings.emplace(key, value);
-            }
-            else if (type == "category")
-            {
-                LOGINFO("[Config]Found category");
-                // TODO: Add category support
-            }
-            else
-            {
-                LOGFATALF("Config:Unknown line %s", pRead);
+                if (type == "bool")
+                {
+                    boolSettings.emplace(fullKey, (value == "true") ? true : false);
+                }
+                else if (type == "int")
+                {
+                    intSettings.emplace(fullKey, atoi(value.c_str()));
+                }
+                else if (type == "string")
+                {
+                    stringSettings.emplace(fullKey, value);
+                }
+                else if (type == "category")
+                {
+                    currentCategory = value;
+                    if(categories.find(currentCategory) == categories.end())
+                    {
+                        categories.emplace(currentCategory);
+                    }
+                }
+                else
+                {
+                    LOGFATALF("Config:Unknown line %s", pRead);
+                }
             }
 
             pRead = ++pLookahead;
@@ -110,19 +116,26 @@ bool Config::FindTypeKeyValue(const std::string& line, std::string& type, std::s
     size_t openPos = line.find("[");
     size_t closePos = line.find("]");
     size_t equalPos = line.find("=");
-    size_t newlinePos = line.find("\n");
+    size_t endlinePos = line.size();
 
-    if ((openPos == std::string::npos) || (closePos == std::string::npos) || (equalPos == std::string::npos))
+    if ((openPos == std::string::npos) || (closePos == std::string::npos))
         return false;
 
     if ((openPos > closePos) || (closePos > equalPos))
         return false;
 
-    type = line.substr(openPos + 1, closePos - openPos - 1);
-    key = line.substr(closePos + 1, equalPos - closePos - 1);
-    value = line.substr(equalPos + 1, newlinePos - equalPos - 1);
-
-    LOGINFOF("Found %s %s %s", type.c_str(), key.c_str(), value.c_str());
+    if(equalPos == std::string::npos)
+    {
+        // not a line with an equals
+        type = line.substr(openPos + 1, closePos - openPos - 1);
+        value = line.substr(closePos + 1, endlinePos - closePos - 1);
+    }
+    else
+    {
+        type = line.substr(openPos + 1, closePos - openPos - 1);
+        key = line.substr(closePos + 1, equalPos - closePos - 1);
+        value = line.substr(equalPos + 1, endlinePos - equalPos - 1);
+    }
 
     return true;
 }

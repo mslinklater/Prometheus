@@ -20,4 +20,5 @@ class RendererPhysicalDevice
     VkPhysicalDeviceFeatures features;
     VkPhysicalDeviceMemoryProperties memoryProperties;
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
+    std::vector<VkLayerProperties> layers;
 };

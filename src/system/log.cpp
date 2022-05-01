@@ -76,17 +76,6 @@ void Log::SplitCategory(std::string line, std::string &categoryOut,
     }
 }
 
-void Log::Info(std::string line)
-{
-    LogLine newLine;
-
-    SplitCategory(line, newLine.category, newLine.content);
-    newLine.type = kInfo;
-
-    AddLine(newLine);
-    printf("Info:%s\n", line.c_str());
-}
-
 void Log::Test()
 {
     LOGINFO("-- retrotool --\n");
@@ -97,6 +86,43 @@ void Log::Test()
     LOGINFOF("Test::Info variadic %d", 999);
     LOGWARNINGF("Test::Warning variadic %d", 999);
     LOGERRORF("Test::Error variadic %d", 999);
+}
+
+void Log::Verbose(const std::string& line)
+{
+    LogLine newLine;
+
+    SplitCategory(line, newLine.category, newLine.content);
+    newLine.type = kInfo;
+
+    AddLine(newLine);
+    printf("Verbose:%s\n", line.c_str());
+}
+
+void Log::Verbosef(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, BUFFER_SIZE, fmt, args);
+    va_end(args);
+
+    LogLine newLine;
+    SplitCategory(buffer, newLine.category, newLine.content);
+    newLine.type = kInfo;
+
+    AddLine(newLine);
+    printf("Verbose:%s\n", newLine.content.c_str());
+}
+
+void Log::Info(const std::string& line)
+{
+    LogLine newLine;
+
+    SplitCategory(line, newLine.category, newLine.content);
+    newLine.type = kInfo;
+
+    AddLine(newLine);
+    printf("Info:%s\n", line.c_str());
 }
 
 void Log::Infof(const char *fmt, ...)
@@ -114,7 +140,7 @@ void Log::Infof(const char *fmt, ...)
     printf("Info:%s\n", newLine.content.c_str());
 }
 
-void Log::Warning(std::string line)
+void Log::Warning(const std::string& line)
 {
     LogLine newLine;
     SplitCategory(line, newLine.category, newLine.content);
@@ -139,7 +165,7 @@ void Log::Warningf(const char *fmt, ...)
     printf("Warning:%s\n", newLine.content.c_str());
 }
 
-void Log::Error(std::string line)
+void Log::Error(const std::string& line)
 {
     LogLine newLine;
     SplitCategory(line, newLine.category, newLine.content);
@@ -164,7 +190,7 @@ void Log::Errorf(const char *fmt, ...)
     printf("Error:%s\n", newLine.content.c_str());
 }
 
-void Log::Fatal(std::string line)
+void Log::Fatal(const std::string& line)
 {
     LogLine newLine;
     SplitCategory(line, newLine.category, newLine.content);

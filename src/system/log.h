@@ -53,19 +53,19 @@ public:
 	
 	void Test();
 	
-	void Verbose(std::string line);
+	void Verbose(const std::string& line);
 	void Verbosef(const char* fmt, ...);
 
-	void Info(std::string line);
+	void Info(const std::string& line);
 	void Infof(const char* fmt, ...);
 	
-	void Warning(std::string line);
+	void Warning(const std::string& line);
 	void Warningf(const char* fmt, ...);
 	
-	void Error(std::string line);
+	void Error(const std::string& line);
 	void Errorf(const char* fmt, ...);
 
-	void Fatal(std::string line);
+	void Fatal(const std::string& line);
 	void Fatalf(const char* fmt, ...);
 
 	int GetLineCount();

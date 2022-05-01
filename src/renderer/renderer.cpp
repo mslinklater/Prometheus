@@ -34,12 +34,19 @@ EError Renderer::Init()
         return ErrorLogAndReturn(EError::SDL_CouldNotGetRequiredVulkanExtensions);
     }
 
-    extensions.resize(extension_count);
+    enabledExtensions.resize(extension_count);
 
-    if (!SDL_Vulkan_GetInstanceExtensions(window, &extension_count, extensions.data()))
+    if (!SDL_Vulkan_GetInstanceExtensions(window, &extension_count, enabledExtensions.data()))
     {
         return ErrorLogAndReturn(EError::SDL_CouldNotGetRequiredVulkanExtensions);
     }
+
+    // Get available instance layers
+
+    uint32_t numAvailableLayers;
+    vkEnumerateInstanceLayerProperties(&numAvailableLayers, nullptr);
+    availableLayers.resize(numAvailableLayers);
+    vkEnumerateInstanceLayerProperties(&numAvailableLayers, &availableLayers[0]);
 
     // Create instance
 
@@ -64,10 +71,10 @@ EError Renderer::Init()
     instInfo.pNext = NULL;
     instInfo.flags = 0;
     instInfo.pApplicationInfo = &appInfo;
-    instInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    instInfo.ppEnabledExtensionNames = extensions.data();
-    instInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
-    instInfo.ppEnabledLayerNames = layers.data();
+    instInfo.enabledExtensionCount = static_cast<uint32_t>(enabledExtensions.size());
+    instInfo.ppEnabledExtensionNames = enabledExtensions.data();
+    instInfo.enabledLayerCount = static_cast<uint32_t>(enabledLayers.size());
+    instInfo.ppEnabledLayerNames = enabledLayers.data();
 
     // Create the Vulkan instance.
     VkResult result = vkCreateInstance(&instInfo, NULL, &instance);
@@ -80,6 +87,7 @@ EError Renderer::Init()
         return ErrorLogAndReturn(EError::Vulkan_CouldNotCreateInstance);
     }
 
+    
     // Enumerate physical devices
 
     uint32_t physicalDeviceCount;
@@ -102,7 +110,10 @@ EError Renderer::Init()
     for (uint32_t iDevice = 0; iDevice < physicalDeviceCount; iDevice++)
     {
         physicalDevices[iDevice].SetPhysicalDevice(vulkanPhysicalDevices[iDevice]);
-        physicalDevices[iDevice].LogDeviceInfo();
+        if(Config::Instance()->GetBool("vulkan.devices.loginfo"))
+        {
+            physicalDevices[iDevice].LogDeviceInfo();
+        }
     }
 
     // TODO: choose which physical device to use and create the logical device

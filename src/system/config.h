@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <set>
 
 class Config
 {
@@ -22,6 +23,9 @@ class Config
     void Initialise();
 
     bool FindTypeKeyValue(const std::string& line, std::string& type, std::string& key, std::string& value);
+
+    std::string currentCategory;
+    std::set<std::string> categories;
 
     std::map<std::string, bool> boolSettings;
     std::map<std::string, std::string> stringSettings;
