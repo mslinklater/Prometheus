@@ -11,10 +11,8 @@
 #include "system/config.h"
 #include "system/log.h"
 
-EError Renderer::Init()
+EError Renderer::InitSDL()
 {
-    LOGVERBOSE("Renderer:Init()");
-
     // Create an SDL window that supports Vulkan rendering.
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
@@ -42,6 +40,15 @@ EError Renderer::Init()
     {
         return ErrorLogAndReturn(EError::SDL_CouldNotGetRequiredVulkanExtensions);
     }
+	
+	return EError::OK;
+}
+
+EError Renderer::Init()
+{
+    LOGVERBOSE("Renderer:Init()");
+
+	InitSDL();
 
     // Get available instance layers
 

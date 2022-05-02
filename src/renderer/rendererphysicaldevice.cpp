@@ -21,6 +21,8 @@ void RendererPhysicalDevice::SetPhysicalDevice(VkPhysicalDevice deviceIn)
 	// get memory properties
 	vkGetPhysicalDeviceMemoryProperties(device, &memoryProperties);
 
+	// get physical device format properties
+
 	// get queue family properties
 	uint32_t numQueueFamilies;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &numQueueFamilies, nullptr);
@@ -78,14 +80,14 @@ void RendererPhysicalDevice::LogDeviceInfo()
     LOGINFOF("Feature: tessellationShader:%d", features.tessellationShader);
     LOGINFOF("Feature: sampleRateShading:%d", features.sampleRateShading);
     LOGINFOF("Feature: dualSrcBlend:%d", features.dualSrcBlend);
+    LOGINFOF("Feature: logicOp:%d", features.logicOp);
+    LOGINFOF("Feature: multiDrawIndirect:%d", features.multiDrawIndirect);
+    LOGINFOF("Feature: drawIndirectFirstInstance:%d", features.drawIndirectFirstInstance);
+    LOGINFOF("Feature: depthClamp:%d", features.depthClamp);
+    LOGINFOF("Feature: depthBiasClamp:%d", features.depthBiasClamp);
+    LOGINFOF("Feature: fillModeNonSolid:%d", features.fillModeNonSolid);
+    LOGINFOF("Feature: depthBounds:%d", features.depthBounds);
 #if 0
-    VkBool32    logicOp;
-    VkBool32    multiDrawIndirect;
-    VkBool32    drawIndirectFirstInstance;
-    VkBool32    depthClamp;
-    VkBool32    depthBiasClamp;
-    VkBool32    fillModeNonSolid;
-    VkBool32    depthBounds;
     VkBool32    wideLines;
     VkBool32    largePoints;
     VkBool32    alphaToOne;

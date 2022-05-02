@@ -1,9 +1,14 @@
 [category]vulkan
+
 [string]device.preferred=Intel
 [bool]devices.loginfo=true
 [bool]debug=false
+[bool]require.queue.graphics=true
+[bool]require.queue.compute=false
+[bool]require.queue.transfer=false
 
 [category]log
+
 [bool]verbose=false
 [bool]info=true
 [bool]warning=true

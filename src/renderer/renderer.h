@@ -22,14 +22,15 @@ class SDL_Window;
 
 class Renderer
 {
-  public:
-    Renderer() {}
-    virtual ~Renderer() {}
+public:
+	Renderer() {}
+	virtual ~Renderer() {}
 
     EError Init();
     EError Shutdown();
 
-  private:
+private:
+    EError InitSDL();
     void LogInstanceProperties();
 
     SDL_Window *window;
