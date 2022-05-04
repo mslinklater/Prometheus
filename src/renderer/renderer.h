@@ -12,6 +12,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
+#include <memory>
 #include <vulkan/vulkan.h>
 
 #include "system/errors.h"
@@ -19,6 +20,7 @@
 #include "rendererphysicaldevice.h"
 
 class SDL_Window;
+class RendererLogicalDevice;
 
 class Renderer
 {
@@ -31,6 +33,7 @@ public:
 
 private:
     EError InitSDL();
+
     void LogInstanceProperties();
 
     SDL_Window *window;
@@ -47,4 +50,5 @@ private:
     std::vector<VkExtensionProperties> availableExtensions;
 
     std::vector<RendererPhysicalDevice> physicalDevices;
+	std::shared_ptr<RendererLogicalDevice> pLogicalDevice;
 };

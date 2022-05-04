@@ -177,7 +177,22 @@ void Renderer::LogInstanceProperties()
     LOGINFOF("Engine version:%d", applicationInfo.engineVersion);
     LOGINFOF("API version:%s", StringAPIVersion(applicationInfo.apiVersion).c_str());
     LOGINFOF("Num physical devices:%d", physicalDevices.size());
+
     LOGINFO("");
+    LOGINFO("--- Supported extensions ---");
+    LOGINFO("");
+	for(int iExtension=0 ; iExtension<availableExtensions.size() ; iExtension++)
+	{
+		LOGINFOF("Extension: %s spec: %d", availableExtensions[iExtension].extensionName, availableExtensions[iExtension].specVersion);
+	}
+
+    LOGINFO("");
+    LOGINFO("--- Supported layers ---");
+    LOGINFO("");
+	for(int iLayer=0 ; iLayer<availableLayers.size() ; iLayer++)
+	{
+		LOGINFOF("Layer: %s spec: %d", availableLayers[iLayer].layerName, availableLayers[iLayer].specVersion);
+	}
 
     for (int iDevice = 0; iDevice < physicalDevices.size(); iDevice++)
     {

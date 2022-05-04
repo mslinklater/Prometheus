@@ -9,8 +9,14 @@ void RendererPhysicalDevice::SetPhysicalDevice(VkPhysicalDevice deviceIn)
 	// get layers
     uint32_t numLayers;
     vkEnumerateDeviceLayerProperties(device, &numLayers, nullptr);
-    layers.resize(numLayers);
-    vkEnumerateDeviceLayerProperties(device, &numLayers, &layers[0]);
+    supportedLayers.resize(numLayers);
+    vkEnumerateDeviceLayerProperties(device, &numLayers, &supportedLayers[0]);
+
+	// get extensions
+    uint32_t numExtensions;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &numExtensions, nullptr);
+    supportedExtensions.resize(numExtensions);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &numExtensions, &supportedExtensions[0]);
 
     // get properties
 	vkGetPhysicalDeviceProperties(device, &properties);
@@ -37,13 +43,13 @@ void RendererPhysicalDevice::LogDeviceName()
 
 void RendererPhysicalDevice::LogDeviceInfo()
 {
+    LOGINFO("");
 	LOGINFO("=== Vulkan Physical Device Info ===");
 	LOGINFO("");
 	LOGINFO("--- Properties ---");
 	LOGINFO("");
-	LOGINFOF("Name: %s", properties.deviceName);
-
 	// Properties
+	LOGINFOF("Name: %s", properties.deviceName);
     LOGINFOF("API version: %s", StringAPIVersion(properties.apiVersion).c_str());
     LOGINFOF("Driver version: %s", StringAPIVersion(properties.driverVersion).c_str());
     LOGINFOF("Vendor id: %04x", properties.vendorID);
@@ -66,6 +72,23 @@ void RendererPhysicalDevice::LogDeviceInfo()
 	}
     LOGINFOF("Device name: %s", properties.deviceName);
 
+	LOGINFO("");
+	LOGINFO("--- Layers ---");
+	LOGINFO("");
+	for(int iLayer=0 ; iLayer<supportedLayers.size() ; iLayer++)
+	{
+		LOGINFOF("Layer: %s spec: %d", supportedLayers[iLayer].layerName, supportedLayers[iLayer].specVersion);
+	}
+
+	LOGINFO("");
+	LOGINFO("--- Extensions ---");
+	LOGINFO("");
+	for(int iExtension=0 ; iExtension<supportedExtensions.size() ; iExtension++)
+	{
+		LOGINFOF("Extension: %s spec: %d", supportedExtensions[iExtension].extensionName, supportedExtensions[iExtension].specVersion);
+	}
+
+	LOGINFO("");
 	LOGINFO("--- Limits ---");
 	LOGINFO("");
 
@@ -87,20 +110,20 @@ void RendererPhysicalDevice::LogDeviceInfo()
     LOGINFOF("Feature: depthBiasClamp:%d", features.depthBiasClamp);
     LOGINFOF("Feature: fillModeNonSolid:%d", features.fillModeNonSolid);
     LOGINFOF("Feature: depthBounds:%d", features.depthBounds);
+    LOGINFOF("Feature: wideLines:%d", features.wideLines);
+    LOGINFOF("Feature: largePoints:%d", features.largePoints);
+    LOGINFOF("Feature: alphaToOne:%d", features.alphaToOne);
+    LOGINFOF("Feature: multiViewport:%d", features.multiViewport);
+    LOGINFOF("Feature: samplerAnisotropy:%d", features.samplerAnisotropy);
+    LOGINFOF("Feature: textureCompressionETC2:%d", features.textureCompressionETC2);
+    LOGINFOF("Feature: textureCompressionASTC_LDR:%d", features.textureCompressionASTC_LDR);
+    LOGINFOF("Feature: textureCompressionBC:%d", features.textureCompressionBC);
+    LOGINFOF("Feature: occlusionQueryPrecise:%d", features.occlusionQueryPrecise);
+    LOGINFOF("Feature: pipelineStatisticsQuery:%d", features.pipelineStatisticsQuery);
+    LOGINFOF("Feature: vertexPipelineStoresAndAtomics:%d", features.vertexPipelineStoresAndAtomics);
+    LOGINFOF("Feature: fragmentStoresAndAtomics:%d", features.fragmentStoresAndAtomics);
+    LOGINFOF("Feature: shaderTessellationAndGeometryPointSize:%d", features.shaderTessellationAndGeometryPointSize);
 #if 0
-    VkBool32    wideLines;
-    VkBool32    largePoints;
-    VkBool32    alphaToOne;
-    VkBool32    multiViewport;
-    VkBool32    samplerAnisotropy;
-    VkBool32    textureCompressionETC2;
-    VkBool32    textureCompressionASTC_LDR;
-    VkBool32    textureCompressionBC;
-    VkBool32    occlusionQueryPrecise;
-    VkBool32    pipelineStatisticsQuery;
-    VkBool32    vertexPipelineStoresAndAtomics;
-    VkBool32    fragmentStoresAndAtomics;
-    VkBool32    shaderTessellationAndGeometryPointSize;
     VkBool32    shaderImageGatherExtended;
     VkBool32    shaderStorageImageExtendedFormats;
     VkBool32    shaderStorageImageMultisample;
@@ -131,7 +154,9 @@ void RendererPhysicalDevice::LogDeviceInfo()
 #endif
 
 	// Memory properties
+	LOGINFO("");
 	LOGINFO("   --- Memory ---");
+	LOGINFO("");
 	LOGINFOF("Num memory types:%d", memoryProperties.memoryTypeCount);
 	for(int iMemType=0 ; iMemType < memoryProperties.memoryTypeCount ; iMemType++)
 	{
