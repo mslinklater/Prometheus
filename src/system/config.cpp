@@ -1,6 +1,7 @@
 #include "config.h"
 #include "log.h"
 #include <string.h>
+#include <unistd.h>
 
 static Config* instance = nullptr;
 
@@ -41,7 +42,7 @@ void Config::Initialise()
 
     if (hFile == nullptr)
     {
-        LOGERRORF("Config::Unable to load config file '%s'", configPath.c_str());
+        LOGERRORF("Config::Unable to open config file '%s' cwd:%s", configPath.c_str(), get_current_dir_name());
         // TODO add exception
     }
     else

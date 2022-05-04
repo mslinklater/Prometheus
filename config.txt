@@ -9,7 +9,7 @@
 
 [category]log
 
-[bool]verbose=false
+[bool]verbose=true
 [bool]info=true
 [bool]warning=true
 [bool]error=true
