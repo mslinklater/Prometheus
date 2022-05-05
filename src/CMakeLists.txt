@@ -18,6 +18,7 @@ add_subdirectory("system")
 add_subdirectory("renderer")
 add_subdirectory("physicsengine")
 add_subdirectory("supereasyjson")
+add_subdirectory("3rdparty/lua-5.4.4/src")
 
 add_executable(prometheus ${SOURCE_FILES})
 target_link_libraries(prometheus ${SDL2_LIBRARIES} ${Vulkan_LIBRARIES})
