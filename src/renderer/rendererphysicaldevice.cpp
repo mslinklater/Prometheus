@@ -156,65 +156,53 @@ void RendererPhysicalDevice::LogDeviceInfo()
 	LOGINFO("   --- Memory ---");
 	LOGINFO("");
 	LOGINFOF("Num memory types:%d", memoryProperties.memoryTypeCount);
+	LOGINFO("");
+
 	for(int iMemType=0 ; iMemType < memoryProperties.memoryTypeCount ; iMemType++)
 	{
-		LOGINFOF("Heap index:%d", memoryProperties.memoryTypes[iMemType].heapIndex);
-		if(memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
-		{
-			LOGINFO("Flag: Device Local");
-		}
-		if(memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-		{
-			LOGINFO("Flag: Host Visible");
-		}
-		if(memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
-		{
-			LOGINFO("Flag: Host Coherent");
-		}
-		if(memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT)
-		{
-			LOGINFO("Flag: Host Cached");
-		}
-		if(memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)
-		{
-			LOGINFO("Flag: LazilyAllocated");
-		}
-		if(memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT)
-		{
-			LOGINFO("Flag: Protected");
-		}
-		if(memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD)
-		{
-			LOGINFO("Flag: Device Coherent (AMD)");
-		}
-		if(memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD)
-		{
-			LOGINFO("Flag: Device Uncached (AMD)");
-		}
-		if(memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV)
-		{
-			LOGINFO("Flag: Device RDMA Capable (NV)");
-		}
-	}
+        bool bDeviceLocal = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        bool bHostVisible = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+        bool bHostCoherent = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        bool bHostCached = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+        bool bLazilyAllocated = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+        bool bProtected = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT;
+        bool bDeviceCoherent = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD;
+        bool bDeviceUncached = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD;
+        bool bRdmaCapable = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV;
 
+        LOGINFOF("Heap %d: %s", memoryProperties.memoryTypes[iMemType].heapIndex,
+			bDeviceLocal ? "[DeviceLocal] " : "",
+			bHostVisible ? "[HostVisible] " : "",
+			bHostCoherent ? "[HostCoherent] " : "",
+			bHostCached ? "[HostCached] " : "",
+			bLazilyAllocated ? "[LazilyAllocated] " : "",
+			bProtected ? "[Protected] " : "",
+			bDeviceCoherent ? "[DeviceCoherent] " : "",
+			bDeviceUncached ? "[DeviceUncached] " : "",
+			bRdmaCapable ? "[RDMACapable] " : ""
+		);
+    }
+
+	LOGINFO("");
 	LOGINFOF("Num memory heaps:%d", memoryProperties.memoryHeapCount);
+	LOGINFO("");
 	for(int iMemHeap=0 ; iMemHeap < memoryProperties.memoryHeapCount ; iMemHeap++)
 	{
-		LOGINFOF("Heap %d size:%luMiB", iMemHeap, memoryProperties.memoryHeaps[iMemHeap].size/(1024*1024));
-		if(memoryProperties.memoryHeaps[iMemHeap].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
-		{
-			LOGINFO("Flag: Device Local");
-		}
-		if(memoryProperties.memoryHeaps[iMemHeap].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT)
-		{
-			LOGINFO("Flag: Multi Instance");
-		}
+        bool bLocal = memoryProperties.memoryHeaps[iMemHeap].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT;
+        bool bMultiInstance = memoryProperties.memoryHeaps[iMemHeap].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT;
+        LOGINFOF("Heap %d size:%luMiB %s %s", iMemHeap, memoryProperties.memoryHeaps[iMemHeap].size / (1024 * 1024),
+			bLocal ? "[Local]" : "",
+			bMultiInstance ? "[MultiInstance]" : ""
+		);
 	}
 
 	// Queue family properties
+	LOGINFO("");
+	LOGINFO("   --- Queues ---");
+	LOGINFO("");
 	for(int iQueue=0 ; iQueue<queueFamilyProperties.size() ; iQueue++)
 	{
-		LOGINFO("   --- Queue family ---");
+		LOGINFOF("Queue family %d", iQueue);
 		LOGINFOF("Count: %d", queueFamilyProperties[iQueue].queueCount);
 		if(queueFamilyProperties[iQueue].queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
@@ -236,6 +224,6 @@ void RendererPhysicalDevice::LogDeviceInfo()
 		{
 			LOGINFO("   Protected");
 		}
+		LOGINFO("");
 	}
-	LOGINFO(" ");
 }
