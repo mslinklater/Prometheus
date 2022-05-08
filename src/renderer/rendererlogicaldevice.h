@@ -12,5 +12,5 @@ private:
 	VkPhysicalDevice physicalDevice;
 	VkDevice device;
 	VkDeviceCreateInfo createInfo;
-	VkAllocationCallbacks allocationCallbacks;
+//	VkAllocationCallbacks allocationCallbacks;
 };

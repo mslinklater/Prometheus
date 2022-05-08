@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "rendererlogicaldevice.h"
+#include "system/log.h"
 
 RendererLogicalDevice::RendererLogicalDevice(VkPhysicalDevice physicalDeviceIn)
 {
@@ -13,6 +14,10 @@ RendererLogicalDevice::RendererLogicalDevice(VkPhysicalDevice physicalDeviceIn)
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.pNext = nullptr;
 
+	// TODO - setup the rest of createInfo
 
-	vkCreateDevice(physicalDevice, &createInfo, &allocationCallbacks, &device);
+	if(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
+	{
+		LOGFATAL("Unable to create logical device...");
+	}
 }

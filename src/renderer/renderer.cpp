@@ -7,6 +7,7 @@
 
 #include "vulkan/vk_layer_utils.h"
 
+#include "rendererlogicaldevice.h"
 #include "renderer.h"
 #include "system/config.h"
 #include "system/log.h"
@@ -152,6 +153,11 @@ EError Renderer::Init()
         return ErrorLogAndReturn(EError::SDL_CouldNotCreateVulkanSurface);
     }
 
+	// Create logical device
+
+	pLogicalDevice = std::make_shared<RendererLogicalDevice>(physicalDevices[0].GetPhysicalDevice());
+//	pLogicalDevice->
+
     return EError::OK;
 }
 
@@ -198,5 +204,6 @@ void Renderer::LogInstanceProperties()
     {
         physicalDevices[iDevice].LogDeviceInfo();
     }
+
 }
 
