@@ -10,10 +10,12 @@ class RendererPhysicalDevice
     virtual ~RendererPhysicalDevice() {}
 
     void SetPhysicalDevice(VkPhysicalDevice deviceIn);
-	VkPhysicalDevice GetPhysicalDevice(){ return device; }
+	  VkPhysicalDevice GetPhysicalDevice(){ return device; }
 
     void LogDeviceName();
     void LogDeviceInfo();
+
+    int GraphicsQueueIndex();
 
   private:
     VkPhysicalDevice device;

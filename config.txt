@@ -1,7 +1,16 @@
 [category]vulkan
 
 [string]device.preferred=NVIDIA
+[bool]instance.loginfo=true
+[bool]instance.loginfo.extensions=false
+[bool]instance.loginfo.layers=false
 [bool]devices.loginfo=true
+[bool]devices.loginfo.layers=false
+[bool]devices.loginfo.extensions=false
+[bool]devices.loginfo.features=false
+[bool]devices.loginfo.limits=true
+[bool]devices.loginfo.memory=false
+[bool]devices.loginfo.queues=false
 [bool]debug=true
 [bool]require.queue.graphics=true
 [bool]require.queue.compute=false

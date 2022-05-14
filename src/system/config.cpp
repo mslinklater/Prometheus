@@ -141,13 +141,13 @@ bool Config::FindTypeKeyValue(const std::string& line, std::string& type, std::s
     return true;
 }
 
-bool Config::GetBool(std::string key)
+bool Config::GetBool(std::string key, bool defaultValue)
 {
     if (boolSettings.find(key) != boolSettings.end())
     {
         return boolSettings[key];
     }
-    return false;
+    return defaultValue;
 }
 
 std::string Config::GetString(std::string key)

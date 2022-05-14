@@ -13,7 +13,7 @@ class Config
     void ParseFile(std::string filename);
     void SaveCurrentConfigToFile(std::string filename);
 
-    bool GetBool(std::string key);
+    bool GetBool(std::string key, bool defaultValue = false);
     void SetBool(std::string key, bool value);
 
     bool StringExists(std::string key);

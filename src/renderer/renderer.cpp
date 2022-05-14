@@ -130,20 +130,28 @@ EError Renderer::Init()
 		physicalDeviceAcceptable.push_back(true);
     }
 
-    if(Config::Instance()->GetBool("vulkan.devices.loginfo"))
+    if(Config::Instance()->GetBool("vulkan.instance.loginfo"))
     {
         LogInstanceProperties();
+    }
+    if(Config::Instance()->GetBool("vulkan.devices.loginfo"))
+    {
+        for (int iDevice = 0; iDevice < physicalDevices.size(); iDevice++)
+        {
+            physicalDevices[iDevice].LogDeviceInfo();
+        }
     }
 
     // TODO: choose which physical device to use and create the logical device
 
+	// go through acceptablePhysicalDevices vector and test against desired properties, removing ones which don't satisfy requirements
     for (uint32_t iDevice = 0; iDevice < physicalDeviceCount; iDevice++)
 	{
-		
-	}
-
-
-	// go through acceptablePhysicalDevices vector and test against desired properties, removing ones which don't satisfy requirements
+		if(physicalDevices[iDevice].GraphicsQueueIndex() == -1)
+        {
+            physicalDeviceAcceptable[iDevice] = false;
+        }
+    }
 
     // check for a preferred vulkan device
     if (Config::Instance()->StringExists("vulkan.device.preferred"))
@@ -193,26 +201,26 @@ void Renderer::LogInstanceProperties()
     LOGINFOF("API version:%s", StringAPIVersion(applicationInfo.apiVersion).c_str());
     LOGINFOF("Num physical devices:%d", physicalDevices.size());
 
-    LOGINFO("");
-    LOGINFO("--- Supported extensions ---");
-    LOGINFO("");
-	for(int iExtension=0 ; iExtension<availableExtensions.size() ; iExtension++)
-	{
-		LOGINFOF("Extension: %s spec: %d", availableExtensions[iExtension].extensionName, availableExtensions[iExtension].specVersion);
-	}
-
-    LOGINFO("");
-    LOGINFO("--- Supported layers ---");
-    LOGINFO("");
-	for(int iLayer=0 ; iLayer<availableLayers.size() ; iLayer++)
-	{
-		LOGINFOF("Layer: %s spec: %d", availableLayers[iLayer].layerName, availableLayers[iLayer].specVersion);
-	}
-
-    for (int iDevice = 0; iDevice < physicalDevices.size(); iDevice++)
+    if(Config::Instance()->GetBool("vulkan.instance.loginfo.extensions", true))
     {
-        physicalDevices[iDevice].LogDeviceInfo();
+        LOGINFO("");
+        LOGINFO("--- Supported extensions ---");
+        LOGINFO("");
+        for(int iExtension=0 ; iExtension<availableExtensions.size() ; iExtension++)
+        {
+            LOGINFOF("Extension: %s spec: %d", availableExtensions[iExtension].extensionName, availableExtensions[iExtension].specVersion);
+        }
     }
 
+    if(Config::Instance()->GetBool("vulkan.instance.loginfo.extensions", true))
+    {
+        LOGINFO("");
+        LOGINFO("--- Supported layers ---");
+        LOGINFO("");
+        for(int iLayer=0 ; iLayer<availableLayers.size() ; iLayer++)
+        {
+            LOGINFOF("Layer: %s spec: %d", availableLayers[iLayer].layerName, availableLayers[iLayer].specVersion);
+        }
+    }
 }
 
