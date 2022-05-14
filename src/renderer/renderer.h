@@ -50,5 +50,7 @@ private:
     std::vector<VkExtensionProperties> availableExtensions;
 
     std::vector<RendererPhysicalDevice> physicalDevices;
+	std::vector<bool> physicalDeviceAcceptable;
+	int	chosenPhysicalDevice;
 	std::shared_ptr<RendererLogicalDevice> pLogicalDevice;
 };

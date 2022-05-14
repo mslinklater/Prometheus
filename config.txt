@@ -6,6 +6,8 @@
 [bool]require.queue.graphics=true
 [bool]require.queue.compute=false
 [bool]require.queue.transfer=false
+[bool]require.queue.sparsebinding=false
+[bool]require.queue.protected=false
 
 [category]log
 

@@ -127,6 +127,7 @@ EError Renderer::Init()
     for (uint32_t iDevice = 0; iDevice < physicalDeviceCount; iDevice++)
     {
         physicalDevices[iDevice].SetPhysicalDevice(vulkanPhysicalDevices[iDevice]);
+		physicalDeviceAcceptable.push_back(true);
     }
 
     if(Config::Instance()->GetBool("vulkan.devices.loginfo"))
@@ -135,6 +136,14 @@ EError Renderer::Init()
     }
 
     // TODO: choose which physical device to use and create the logical device
+
+    for (uint32_t iDevice = 0; iDevice < physicalDeviceCount; iDevice++)
+	{
+		
+	}
+
+
+	// go through acceptablePhysicalDevices vector and test against desired properties, removing ones which don't satisfy requirements
 
     // check for a preferred vulkan device
     if (Config::Instance()->StringExists("vulkan.device.preferred"))
