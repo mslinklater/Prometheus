@@ -227,7 +227,11 @@ void RendererPhysicalDevice::LogDeviceInfo()
 			bool bProtected = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT;
 			bool bDeviceCoherent = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD;
 			bool bDeviceUncached = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD;
+#if defined(VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV)
 			bool bRdmaCapable = memoryProperties.memoryTypes[iMemType].propertyFlags & VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV;
+#else
+			bool bRdmaCapable = false;
+#endif
 
 			LOGINFOF("Heap %d: %s", memoryProperties.memoryTypes[iMemType].heapIndex,
 				bDeviceLocal ? "[DeviceLocal] " : "",
