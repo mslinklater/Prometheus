@@ -21,6 +21,7 @@ class Config
 
   private:
     void Initialise();
+    void Dump();
 
     bool FindTypeKeyValue(const std::string& line, std::string& type, std::string& key, std::string& value);
 

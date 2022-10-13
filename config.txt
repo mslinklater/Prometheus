@@ -1,3 +1,6 @@
+[category]config
+[bool]dumpafterinit=true
+
 [category]vulkan
 
 [string]device.preferred=NVIDIA

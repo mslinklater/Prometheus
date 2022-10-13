@@ -34,6 +34,8 @@ void Config::ParseCommandLine(int argc, char* argv[])
 
 void Config::Initialise()
 {
+    LOGINFO("Config:Initialise");
+    
     std::string configPath("../config.txt");
 
     // load from file
@@ -108,6 +110,17 @@ void Config::Initialise()
         free(pFileBuffer);
         fclose(hFile);
     }
+
+    if(GetBool("config.dumpafterinit", false))
+    {
+        Dump();
+    }
+    return;
+}
+
+void Config::Dump()
+{
+    LOGINFO("TODO - Dumping config");
 }
 
 bool Config::FindTypeKeyValue(const std::string& line, std::string& type, std::string& key, std::string& value)

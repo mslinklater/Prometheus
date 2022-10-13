@@ -10,6 +10,11 @@ RendererLogicalDevice::RendererLogicalDevice(VkPhysicalDevice physicalDeviceIn)
 
 	// select which queues we are wanting to use
 
+	VkDeviceQueueCreateInfo queueCreateInfo[1];
+	queueCreateInfo[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo[0].pNext = nullptr;
+	queueCreateInfo[0].
+
 	// TODO: Setup the createInfo and allocationCallbacks
 
 	memset(&createInfo, 1, sizeof(VkDeviceCreateInfo));
@@ -17,7 +22,7 @@ RendererLogicalDevice::RendererLogicalDevice(VkPhysicalDevice physicalDeviceIn)
 	createInfo.pNext = nullptr;
 	createInfo.flags = 0;
 	//createInfo.queueCreateInfoCount;
-	//createInfo.pQueueCreateInfos;
+	createInfo.pQueueCreateInfos = 
 	//createInfo.enableLayerCount;
 	//createInfo.ppEnabledLayerNames;
 	//createInfo.enabledExtensionCount;
