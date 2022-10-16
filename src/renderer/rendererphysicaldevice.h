@@ -20,9 +20,11 @@ class RendererPhysicalDevice
   private:
     VkPhysicalDevice device;
     VkPhysicalDeviceProperties properties;
-    VkPhysicalDeviceFeatures features;
+    VkPhysicalDeviceFeatures features;	
     VkPhysicalDeviceMemoryProperties memoryProperties;
+	
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
+
     std::vector<VkLayerProperties> supportedLayers;
 	std::vector<VkExtensionProperties> supportedExtensions;
 };

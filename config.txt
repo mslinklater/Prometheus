@@ -8,12 +8,12 @@
 [bool]instance.loginfo.extensions=false
 [bool]instance.loginfo.layers=false
 [bool]devices.loginfo=true
-[bool]devices.loginfo.layers=false
-[bool]devices.loginfo.extensions=false
-[bool]devices.loginfo.features=false
+[bool]devices.loginfo.layers=true
+[bool]devices.loginfo.extensions=true
+[bool]devices.loginfo.features=true
 [bool]devices.loginfo.limits=true
-[bool]devices.loginfo.memory=false
-[bool]devices.loginfo.queues=false
+[bool]devices.loginfo.memory=true
+[bool]devices.loginfo.queues=true
 [bool]debug=true
 [bool]require.queue.graphics=true
 [bool]require.queue.compute=false

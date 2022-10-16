@@ -103,7 +103,7 @@ EError Renderer::Init()
     {
         return ErrorLogAndReturn(EError::Vulkan_CouldNotCreateInstance);
     }
-
+	LOGINFO("Vulkan::Instance created");
     
     // Enumerate physical devices
 

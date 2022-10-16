@@ -244,6 +244,7 @@ void Log::Fatalf(const char *fmt, ...)
 
     AddLine(newLine);
     printf("Fatal:%s\n", newLine.content.c_str());
+    exit(1);
 }
 
 void Log::AddLine(Log::LogLine line)

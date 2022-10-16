@@ -13,7 +13,7 @@ RendererLogicalDevice::RendererLogicalDevice(VkPhysicalDevice physicalDeviceIn)
 	VkDeviceQueueCreateInfo queueCreateInfo[1];
 	queueCreateInfo[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	queueCreateInfo[0].pNext = nullptr;
-	queueCreateInfo[0].
+//	queueCreateInfo[0].
 
 	// TODO: Setup the createInfo and allocationCallbacks
 
@@ -22,7 +22,7 @@ RendererLogicalDevice::RendererLogicalDevice(VkPhysicalDevice physicalDeviceIn)
 	createInfo.pNext = nullptr;
 	createInfo.flags = 0;
 	//createInfo.queueCreateInfoCount;
-	createInfo.pQueueCreateInfos = 
+	//createInfo.pQueueCreateInfos = 
 	//createInfo.enableLayerCount;
 	//createInfo.ppEnabledLayerNames;
 	//createInfo.enabledExtensionCount;

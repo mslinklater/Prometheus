@@ -34,9 +34,9 @@ void Config::ParseCommandLine(int argc, char* argv[])
 
 void Config::Initialise()
 {
-    LOGINFO("Config:Initialise");
+//    LOGINFO("Config:Initialise");
     
-    std::string configPath("../config.txt");
+    std::string configPath("config.txt");
 
     // load from file
 
@@ -44,7 +44,7 @@ void Config::Initialise()
 
     if (hFile == nullptr)
     {
-        LOGERRORF("Config::Unable to open config file '%s' cwd:%s", configPath.c_str(), get_current_dir_name());
+        LOGFATALF("Config::Unable to open config file '%s' cwd:%s", configPath.c_str(), get_current_dir_name());
         // TODO add exception
     }
     else
