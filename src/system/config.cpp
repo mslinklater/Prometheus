@@ -1,6 +1,7 @@
 #include "config.h"
 #include "log.h"
 #include <string.h>
+#include <sstream>
 #include <unistd.h>
 
 static Config* instance = nullptr;
@@ -34,8 +35,6 @@ void Config::ParseCommandLine(int argc, char* argv[])
 
 void Config::Initialise()
 {
-//    LOGINFO("Config:Initialise");
-    
     std::string configPath("config.txt");
 
     // load from file
@@ -45,7 +44,6 @@ void Config::Initialise()
     if (hFile == nullptr)
     {
         LOGFATALF("Config::Unable to open config file '%s' cwd:%s", configPath.c_str(), get_current_dir_name());
-        // TODO add exception
     }
     else
     {
@@ -89,6 +87,18 @@ void Config::Initialise()
                 else if (type == "string")
                 {
                     stringSettings.emplace(fullKey, value);
+                }
+                else if (type == "stringvector")
+                {
+					std::vector<std::string> empty;
+					stringVectorSettings.emplace(fullKey, empty);
+					// split the value by the delimeter, in this case ','
+					std::stringstream valuestream(value);
+					std::string parsed;
+					while(getline(valuestream, parsed, ','))
+					{
+						stringVectorSettings[fullKey].push_back(parsed);
+					}
                 }
                 else if (type == "category")
                 {
@@ -163,7 +173,33 @@ bool Config::GetBool(std::string key, bool defaultValue)
     return defaultValue;
 }
 
-std::string Config::GetString(std::string key)
+void Config::SetBool(std::string key, bool value)
+{
+    LOGINFOF("Config:SetBool %s %s", key.c_str(), value ? "true" : "false");
+    boolSettings[key] = value;
+}
+
+int Config::GetInt(std::string key, int defaultValue)
+{
+    if (intSettings.find(key) != intSettings.end())
+    {
+        return intSettings[key];
+    }
+    return defaultValue;
+}
+
+void Config::SetInt(std::string key, int value)
+{
+    LOGINFOF("Config:SetInt %s %d", key.c_str(), value);
+    intSettings[key] = value;
+}
+
+bool Config::StringExists(std::string key)
+{
+    return stringSettings.find(key) != stringSettings.end();
+}
+
+const std::string Config::GetString(std::string key)
 {
     if (stringSettings.find(key) != stringSettings.end())
     {
@@ -172,15 +208,21 @@ std::string Config::GetString(std::string key)
     return "INVALID";
 }
 
-void Config::SetBool(std::string key, bool value)
+bool Config::StringVectorExists(std::string key)
 {
-    LOGINFOF("Config:SetBool %s %s", key.c_str(), value ? "true" : "false");
-    boolSettings[key] = value;
+    return stringVectorSettings.find(key) != stringVectorSettings.end();
 }
 
-bool Config::StringExists(std::string key)
+const std::vector<std::string> Config::GetStringVector(std::string key)
 {
-    return stringSettings.find(key) != stringSettings.end();
+    if (stringVectorSettings.find(key) != stringVectorSettings.end())
+    {
+        return stringVectorSettings[key];
+    }
+
+	// not sure about this... hacky to return a const reference to a static ?
+	std::vector<std::string> temp;
+    return temp;
 }
 
 void Config::ParseFile(std::string filename)

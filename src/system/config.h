@@ -3,6 +3,9 @@
 #include <map>
 #include <string>
 #include <set>
+#include <vector>
+
+// TODO: add string vector storage
 
 class Config
 {
@@ -16,9 +19,14 @@ class Config
     bool GetBool(std::string key, bool defaultValue = false);
     void SetBool(std::string key, bool value);
 
-    bool StringExists(std::string key);
-    std::string GetString(std::string key);
+    int GetInt(std::string key, int defaultValue = 0);
+    void SetInt(std::string key, int value);
 
+    bool StringExists(std::string key);
+    const std::string GetString(std::string key);
+
+    bool StringVectorExists(std::string key);
+    const std::vector<std::string> GetStringVector(std::string key);
   private:
     void Initialise();
     void Dump();
@@ -31,4 +39,5 @@ class Config
     std::map<std::string, bool> boolSettings;
     std::map<std::string, std::string> stringSettings;
     std::map<std::string, int> intSettings;
+    std::map<std::string, std::vector<std::string>> stringVectorSettings;
 };

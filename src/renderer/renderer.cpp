@@ -45,6 +45,34 @@ EError Renderer::InitSDL()
 	return EError::OK;
 }
 
+void Renderer::EnableValidation()
+{
+	const std::vector<const char*> requiredLayers = {
+		"VK_LAYER_KHRONOS_validation"
+	};
+
+	for(auto requiredLayer : requiredLayers)
+	{
+		bool supportsLayer = false;
+		for(auto layerProperties : availableLayers)
+		{
+			if(strcmp(layerProperties.layerName, requiredLayer) == 0)
+			{
+				supportsLayer = true;
+			}
+		}
+
+		if(supportsLayer)
+		{
+			enabledLayers.push_back(requiredLayer);
+		}
+		else
+		{
+			LOGFATALF("Vulkan::Does not support required %s layer", requiredLayer);
+		}
+	}
+}
+
 EError Renderer::Init()
 {
     LOGVERBOSE("Renderer:Init()");
@@ -58,18 +86,16 @@ EError Renderer::Init()
     availableLayers.resize(numAvailableLayers);
     vkEnumerateInstanceLayerProperties(&numAvailableLayers, &availableLayers[0]);
 
-    // Get available instance extensions
+	// Check we have the validation layer available and add it to the enabled layers array
+	EnableValidation();
 
+    // Get available instance extensions
     uint32_t numAvailableExtensions;
     vkEnumerateInstanceExtensionProperties(nullptr, &numAvailableExtensions, nullptr);
     availableExtensions.resize(numAvailableExtensions);
     vkEnumerateInstanceExtensionProperties(nullptr, &numAvailableExtensions, &availableExtensions[0]);
 
     // Create instance
-
-#if defined(DEBUG)
-    layers.push_back("VK_LAYER_KHRONOS_validation");
-#endif
 
     // VkApplicationInfo allows the programmer to specifiy some basic
     // information about the program, which can be useful for layers and tools
@@ -127,7 +153,6 @@ EError Renderer::Init()
     for (uint32_t iDevice = 0; iDevice < physicalDeviceCount; iDevice++)
     {
         physicalDevices[iDevice].SetPhysicalDevice(vulkanPhysicalDevices[iDevice]);
-		physicalDeviceAcceptable.push_back(true);
     }
 
     if(Config::Instance()->GetBool("vulkan.instance.loginfo"))
@@ -147,17 +172,30 @@ EError Renderer::Init()
 	// go through acceptablePhysicalDevices vector and test against desired properties, removing ones which don't satisfy requirements
     for (uint32_t iDevice = 0; iDevice < physicalDeviceCount; iDevice++)
 	{
-		if(physicalDevices[iDevice].GraphicsQueueIndex() == -1)
+		if((Config::Instance()->GetBool("vulkan.require.queue.graphics")) && (physicalDevices[iDevice].GraphicsQueueIndex() == -1))
         {
-            physicalDeviceAcceptable[iDevice] = false;
+            physicalDevices[iDevice].acceptable = false;
         }
     }
 
+	// knock out ignored devices
+	std::vector<std::string> ignoredDevices = Config::Instance()->GetStringVector("vulkan.device.ignored");
+	for(auto ignore : ignoredDevices)
+	{
+		for( RendererPhysicalDevice& physicalDevice : physicalDevices)
+		{
+			if(physicalDevice.GetName().find(ignore) != std::string::npos)
+			{
+				physicalDevice.acceptable = false;
+			}
+		}
+	}
+
     // check for a preferred vulkan device
-    if (Config::Instance()->StringExists("vulkan.device.preferred"))
+    if (Config::Instance()->StringVectorExists("vulkan.device.preferred"))
     {
         // find the preferred device
-        std::string preferred = Config::Instance()->GetString("vulkan.device.preferred");
+        std::vector<std::string> preferredDevices = Config::Instance()->GetStringVector("vulkan.device.preferred");
     }
     else
     {
@@ -170,10 +208,23 @@ EError Renderer::Init()
         return ErrorLogAndReturn(EError::SDL_CouldNotCreateVulkanSurface);
     }
 
-	// Create logical device
+	// Create the first acceptable logical device
 
-	pLogicalDevice = std::make_shared<RendererLogicalDevice>(physicalDevices[0].GetPhysicalDevice());
-//	pLogicalDevice->
+	pLogicalDevice = nullptr;
+
+	for(RendererPhysicalDevice& physicalDevice : physicalDevices )
+	{
+		if(physicalDevice.acceptable)
+		{
+			pLogicalDevice = std::make_shared<RendererLogicalDevice>(physicalDevices[0].GetPhysicalDevice());
+			break;
+		}
+	}
+
+	if(pLogicalDevice == nullptr)
+	{
+		LOGFATAL("Vulkan::cannot find suitable physical device");
+	}
 
     return EError::OK;
 }

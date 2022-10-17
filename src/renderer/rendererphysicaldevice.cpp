@@ -6,6 +6,7 @@
 void RendererPhysicalDevice::SetPhysicalDevice(VkPhysicalDevice deviceIn)
 {
 	device = deviceIn;
+	acceptable = true;
 
 	// get layers
     uint32_t numLayers;
@@ -21,6 +22,7 @@ void RendererPhysicalDevice::SetPhysicalDevice(VkPhysicalDevice deviceIn)
 
     // get properties
 	vkGetPhysicalDeviceProperties(device, &properties);
+	name = properties.deviceName;
 
 	// get features
 	vkGetPhysicalDeviceFeatures(device, &features);
