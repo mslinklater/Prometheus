@@ -25,17 +25,21 @@ class RendererLogicalDevice;
 class Renderer
 {
 public:
-	Renderer() {}
-	virtual ~Renderer() {}
+	Renderer();
+	virtual ~Renderer();
 
     EError Init();
     EError Shutdown();
+	bool Validation(){ return validation; }
 
 private:
+	bool validation;
+
     EError InitSDL();
 
     void LogInstanceProperties();
 	void EnableValidation();
+	void GetRequiredExtensions();
 
     SDL_Window *window;
 
@@ -47,11 +51,11 @@ private:
 
     std::vector<const char *> enabledLayers;
     std::vector<VkLayerProperties> availableLayers;
-    std::vector<const char*> enabledExtensions;
+
+    std::vector<const char*> requiredExtensions;
     std::vector<VkExtensionProperties> availableExtensions;
 
     std::vector<RendererPhysicalDevice> physicalDevices;
-//	std::vector<bool> physicalDeviceAcceptable;
 	int	chosenPhysicalDevice;
 	std::shared_ptr<RendererLogicalDevice> pLogicalDevice;
 };

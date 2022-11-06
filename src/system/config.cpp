@@ -130,7 +130,13 @@ void Config::Initialise()
 
 void Config::Dump()
 {
-    LOGINFO("TODO - Dumping config");
+    LOGINFO("====================");
+    LOGINFO("Config::Dumping bool");
+    LOGINFO("====================");
+	for (auto bools = boolSettings.begin(); bools != boolSettings.end(); ++bools)
+	{
+		LOGINFOF("%s = %s", bools->first.c_str(), bools->second ? "true" : "false");
+	}
 }
 
 bool Config::FindTypeKeyValue(const std::string& line, std::string& type, std::string& key, std::string& value)

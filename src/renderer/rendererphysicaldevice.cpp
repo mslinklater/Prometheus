@@ -37,18 +37,23 @@ void RendererPhysicalDevice::SetPhysicalDevice(VkPhysicalDevice deviceIn)
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &numQueueFamilies, nullptr);
 	queueFamilyProperties.resize(numQueueFamilies);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &numQueueFamilies, &queueFamilyProperties[0]);
-}
 
-int RendererPhysicalDevice::GraphicsQueueIndex()
-{
+	// Find the queue type indices
 	for(int iQueue = 0 ; iQueue<queueFamilyProperties.size() ; iQueue++)
 	{
 		if(queueFamilyProperties[iQueue].queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
-	        return iQueue;
+	        graphicsQueueIndex = iQueue;
+        }
+		if(queueFamilyProperties[iQueue].queueFlags & VK_QUEUE_COMPUTE_BIT)
+		{
+	        computeQueueIndex = iQueue;
+        }
+		if(queueFamilyProperties[iQueue].queueFlags & VK_QUEUE_TRANSFER_BIT)
+		{
+	        transferQueueIndex = iQueue;
         }
 	}
-    return -1;
 }
 
 void RendererPhysicalDevice::LogDeviceName()

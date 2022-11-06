@@ -12,6 +12,13 @@
 #include "system/config.h"
 #include "system/log.h"
 
+Renderer::Renderer()
+: validation(false)
+{}
+
+Renderer::~Renderer()
+{}
+
 EError Renderer::InitSDL()
 {
     // Create an SDL window that supports Vulkan rendering.
@@ -35,9 +42,9 @@ EError Renderer::InitSDL()
         return ErrorLogAndReturn(EError::SDL_CouldNotGetRequiredVulkanExtensions);
     }
 
-    enabledExtensions.resize(extension_count);
+    requiredExtensions.resize(extension_count);
 
-    if (!SDL_Vulkan_GetInstanceExtensions(window, &extension_count, enabledExtensions.data()))
+    if (!SDL_Vulkan_GetInstanceExtensions(window, &extension_count, requiredExtensions.data()))
     {
         return ErrorLogAndReturn(EError::SDL_CouldNotGetRequiredVulkanExtensions);
     }
@@ -73,11 +80,23 @@ void Renderer::EnableValidation()
 	}
 }
 
+void Renderer::GetRequiredExtensions()
+{
+	// TODO: Move the SDL extension injection to here
+
+	// if validation is enabled we need to add the message callback extension
+	if(validation)
+	{
+		requiredExtensions.push_back("VK_EXT_DEBUG_UTILS_EXTENSION_NAME");
+	}
+}
+
 EError Renderer::Init()
 {
     LOGVERBOSE("Renderer:Init()");
 
 	InitSDL();
+	validation = Config::Instance()->GetBool("vulkan.instance.validation");
 
     // Get available instance layers
 
@@ -87,13 +106,18 @@ EError Renderer::Init()
     vkEnumerateInstanceLayerProperties(&numAvailableLayers, &availableLayers[0]);
 
 	// Check we have the validation layer available and add it to the enabled layers array
-	EnableValidation();
+	if(validation)
+	{
+		EnableValidation();
+	}
 
     // Get available instance extensions
     uint32_t numAvailableExtensions;
     vkEnumerateInstanceExtensionProperties(nullptr, &numAvailableExtensions, nullptr);
     availableExtensions.resize(numAvailableExtensions);
     vkEnumerateInstanceExtensionProperties(nullptr, &numAvailableExtensions, &availableExtensions[0]);
+
+	GetRequiredExtensions();
 
     // Create instance
 
@@ -114,10 +138,12 @@ EError Renderer::Init()
     instanceInfo.pNext = NULL;
     instanceInfo.flags = 0;
     instanceInfo.pApplicationInfo = &applicationInfo;
-    instanceInfo.enabledExtensionCount = static_cast<uint32_t>(enabledExtensions.size());
-    instanceInfo.ppEnabledExtensionNames = enabledExtensions.data();
+    instanceInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
+    instanceInfo.ppEnabledExtensionNames = requiredExtensions.data();
     instanceInfo.enabledLayerCount = static_cast<uint32_t>(enabledLayers.size());
     instanceInfo.ppEnabledLayerNames = enabledLayers.data();
+
+//	Check required extensions are supported...
 
     // Create the Vulkan instance.
     VkResult result = vkCreateInstance(&instanceInfo, NULL, &instance);

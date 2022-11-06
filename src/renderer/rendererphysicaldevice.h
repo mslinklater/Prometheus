@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <optional>
 #include <vulkan/vulkan.h>
 
 class RendererPhysicalDevice
@@ -18,7 +19,12 @@ class RendererPhysicalDevice
 
 	const std::string& GetName(){ return name; }
 
-    int GraphicsQueueIndex();
+	bool HasGraphicsQueue(){ return graphicsQueueIndex.has_value(); }
+    uint32_t GraphicsQueueIndex(){ return graphicsQueueIndex.value(); }
+	bool HasComputeQueue(){ return computeQueueIndex.has_value(); }
+    uint32_t ComputeQueueIndex(){ return computeQueueIndex.value(); }
+	bool HasTransferQueue(){ return transferQueueIndex.has_value(); }
+    uint32_t TransferQueueIndex(){ return transferQueueIndex.value(); }
 
 	bool acceptable;
 
@@ -30,6 +36,9 @@ class RendererPhysicalDevice
     VkPhysicalDeviceMemoryProperties memoryProperties;
 
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
+	std::optional<uint32_t> graphicsQueueIndex;
+	std::optional<uint32_t> computeQueueIndex;
+	std::optional<uint32_t> transferQueueIndex;
 
     std::vector<VkLayerProperties> supportedLayers;
 	std::vector<VkExtensionProperties> supportedExtensions;
