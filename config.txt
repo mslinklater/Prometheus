@@ -1,14 +1,26 @@
+;-------------------
+; config
+;-------------------
+
 [category]config
+
 [bool]dumpafterinit=true
+
+;-------------------
+; vulkan
+;-------------------
 
 [category]vulkan
 
+; Device selection
 [stringvector]device.preferred=NVIDIA,Intel
 [stringvector]device.ignored=llvmpipe
+
 [bool]instance.validation=true
 [bool]instance.loginfo=true
 [bool]instance.loginfo.extensions=false
 [bool]instance.loginfo.layers=false
+
 [bool]devices.loginfo=true
 [bool]devices.loginfo.layers=false
 [bool]devices.loginfo.extensions=false
@@ -17,12 +29,18 @@
 [bool]devices.loginfo.memory=false
 [bool]devices.loginfo.queues=true
 [bool]devices.excludecputype=true
+
 [bool]debug=true
+
 [bool]require.queue.graphics=true
 [bool]require.queue.compute=false
 [bool]require.queue.transfer=false
 [bool]require.queue.sparsebinding=false
 [bool]require.queue.protected=false
+
+;-------------------
+; log
+;-------------------
 
 [category]log
 
