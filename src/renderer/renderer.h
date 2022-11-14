@@ -39,7 +39,8 @@ private:
 
     void LogInstanceProperties();
 	void EnableValidation();
-	void GetRequiredExtensions();
+	void GetRequiredAndOptionalExtensions();
+	bool CheckRequiredExtensions();
 
     SDL_Window *window;
 
@@ -53,6 +54,9 @@ private:
     std::vector<VkLayerProperties> availableLayers;
 
     std::vector<const char*> requiredExtensions;
+    std::vector<const char*> optionalExtensions;
+
+    std::vector<const char*> requestedExtensions;
     std::vector<VkExtensionProperties> availableExtensions;
 
     std::vector<RendererPhysicalDevice> physicalDevices;

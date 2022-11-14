@@ -22,6 +22,7 @@ EError ErrorLogAndReturn(EError error)
 
         // Vulkan
         LOGANDRETURNLINE(EError::Vulkan_UnableToFindDriver);
+        LOGANDRETURNLINE(EError::Vulkan_ExtensionNotPresent);
         LOGANDRETURNLINE(EError::Vulkan_CouldNotCreateInstance);
         LOGANDRETURNLINE(EError::Vulkan_CouldNotCreateSurface);
         LOGANDRETURNLINE(EError::Vulkan_CouldNotEnumeratePhysicalDevices);

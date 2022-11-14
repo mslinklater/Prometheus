@@ -80,15 +80,87 @@ void Renderer::EnableValidation()
 	}
 }
 
-void Renderer::GetRequiredExtensions()
+void Renderer::GetRequiredAndOptionalExtensions()
 {
 	// TODO: Move the SDL extension injection to here
 
 	// if validation is enabled we need to add the message callback extension
 	if(validation)
 	{
-		requiredExtensions.push_back("VK_EXT_DEBUG_UTILS_EXTENSION_NAME");
+		optionalExtensions.push_back("VK_EXT_DEBUG_UTILS_EXTENSION_NAME");
 	}
+}
+
+bool Renderer::CheckRequiredExtensions()
+{
+	// go through required extensions and check they exist in the available extensions list
+	for(auto requiredExt : requiredExtensions)
+	{
+		bool thisOneAvailable = false;
+		for(auto availableExt : availableExtensions)
+		{
+			if(strcmp(availableExt.extensionName, requiredExt) == 0)
+			{
+				thisOneAvailable = true;
+			}
+		}
+		if(!thisOneAvailable)
+		{
+			// report the error and bail
+			LOGFATALF("Vulkan::Required extension is not available: %s", requiredExt);
+			return false;
+		}
+	}
+
+	// now go through optional extensions and try to survive if they are not available
+	std::vector<std::string> removeFromOptional;
+	for(auto optionalExt : optionalExtensions)
+	{
+		bool thisOneAvailable = false;
+		for(auto availableExt : availableExtensions)
+		{
+			if(strcmp(availableExt.extensionName, optionalExt) == 0)
+			{
+				thisOneAvailable = true;
+			}
+		}
+		if(!thisOneAvailable)
+		{
+			if(strcmp(optionalExt, "VK_EXT_DEBUG_UTILS_EXTENSION_NAME") == 0)
+			{
+				// turn off validation
+				LOGWARNING("Vulkan::Validation extension not available - disabling validation. (VK_EXT_DEBUG_UTILS_EXTENSION_NAME)");
+				validation = false;
+			}
+			else
+			{
+				LOGWARNINGF("Vulkan::Extension not available %s", optionalExt);
+			}
+			removeFromOptional.push_back(optionalExt);
+		}
+	}
+	// remove any unavailable optional extensions
+	for(std::vector<std::string>::iterator rem = removeFromOptional.begin() ; rem != removeFromOptional.end() ; ++rem)
+	{
+		for(std::vector<const char*>::iterator iter = optionalExtensions.begin() ; iter != optionalExtensions.end() ; ++iter)
+		{
+			if(strcmp(*iter, (*rem).c_str()) == 0)
+			{
+				optionalExtensions.erase(iter);
+				break;
+			}
+		}
+	}
+	// copy required and remaining optional extensions to the requested extensions list
+	for(auto required : requiredExtensions)
+	{
+		requestedExtensions.push_back(required);
+	}
+	for(auto optional : optionalExtensions)
+	{
+		requestedExtensions.push_back(optional);
+	}
+	return true;
 }
 
 EError Renderer::Init()
@@ -117,7 +189,8 @@ EError Renderer::Init()
     availableExtensions.resize(numAvailableExtensions);
     vkEnumerateInstanceExtensionProperties(nullptr, &numAvailableExtensions, &availableExtensions[0]);
 
-	GetRequiredExtensions();
+	GetRequiredAndOptionalExtensions();
+	CheckRequiredExtensions();
 
     // Create instance
 
@@ -138,8 +211,8 @@ EError Renderer::Init()
     instanceInfo.pNext = NULL;
     instanceInfo.flags = 0;
     instanceInfo.pApplicationInfo = &applicationInfo;
-    instanceInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
-    instanceInfo.ppEnabledExtensionNames = requiredExtensions.data();
+    instanceInfo.enabledExtensionCount = static_cast<uint32_t>(requestedExtensions.size());
+    instanceInfo.ppEnabledExtensionNames = requestedExtensions.data();
     instanceInfo.enabledLayerCount = static_cast<uint32_t>(enabledLayers.size());
     instanceInfo.ppEnabledLayerNames = enabledLayers.data();
 
@@ -150,6 +223,10 @@ EError Renderer::Init()
     if (result == VK_ERROR_INCOMPATIBLE_DRIVER)
     {
         return ErrorLogAndReturn(EError::Vulkan_UnableToFindDriver);
+    }
+    else if (result == VK_ERROR_EXTENSION_NOT_PRESENT)
+    {
+        return ErrorLogAndReturn(EError::Vulkan_ExtensionNotPresent);
     }
     else if (result)
     {

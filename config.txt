@@ -24,10 +24,10 @@
 [bool]devices.loginfo=true
 [bool]devices.loginfo.layers=false
 [bool]devices.loginfo.extensions=false
-[bool]devices.loginfo.features=true
+[bool]devices.loginfo.features=false
 [bool]devices.loginfo.limits=false
 [bool]devices.loginfo.memory=false
-[bool]devices.loginfo.queues=true
+[bool]devices.loginfo.queues=false
 [bool]devices.excludecputype=true
 
 [bool]debug=true

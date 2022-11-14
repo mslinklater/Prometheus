@@ -16,6 +16,7 @@ enum EError
     // Vulkan
 
     Vulkan_UnableToFindDriver,
+    Vulkan_ExtensionNotPresent,
     Vulkan_CouldNotCreateInstance,
     Vulkan_CouldNotCreateSurface,
     Vulkan_CouldNotEnumeratePhysicalDevices,
