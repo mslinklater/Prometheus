@@ -4,7 +4,7 @@
 
 [category]config
 
-[bool]dumpafterinit=true
+[bool]dumpafterinit=false
 
 ;-------------------
 ; vulkan
