@@ -9,6 +9,12 @@ A selection of tech glued together into a sort of general purpose framework. Use
 * libvulkan-dev
 * vulkan-validationlayers-dev
 
+## To build
+
+cd build
+cmake ../src
+cmake --build .
+
 ## Design Goals
 
 Ideal world stuff... 

@@ -1,25 +1,12 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
-project(prometheus)
+project(Prometheus LANGUAGES CXX)
 
 find_package(SDL2 REQUIRED)
 find_package(Vulkan REQUIRED)
 
-set(CMAKE_C_FLAGS "-DVK_ENABLE_BETA_EXTENSIONS")
-set(CMAKE_CXX_FLAGS "-DVK_ENABLE_BETA_EXTENSIONS")
-#set(CMAKE_BUILD_TYPE Debug)
-
 include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${Vulkan_INCLUDE_DIRS})
 
-set(SOURCE_FILES main.cpp)
-
-add_subdirectory("system")
-add_subdirectory("renderer")
-add_subdirectory("physicsengine")
-add_subdirectory("supereasyjson")
-add_subdirectory("3rdparty/lua-5.4.4/src")
-
-add_executable(prometheus ${SOURCE_FILES})
+add_executable(prometheus main.cpp imgui_impl_sdl.cpp imgui_impl_vulkan.cpp imgui_demo.cpp imgui_draw.cpp imgui_tables.cpp imgui_widgets.cpp imgui.cpp)
 target_link_libraries(prometheus ${SDL2_LIBRARIES} ${Vulkan_LIBRARIES})
-target_include_directories(prometheus PRIVATE ".")
