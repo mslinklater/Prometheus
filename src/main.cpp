@@ -19,6 +19,7 @@
 #include <vulkan/vulkan.h>
 
 #include "renderer/renderer.h"
+#include "system/log.h"
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 
@@ -42,6 +43,8 @@ static void SetupVulkan(const char** extensions, uint32_t extensions_count)
 
     // Create Vulkan Instance
     {
+        LOGINFO("Main::vkCreateInstance");
+
         VkInstanceCreateInfo create_info = {};
         create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         create_info.enabledExtensionCount = extensions_count;
@@ -294,15 +297,10 @@ int main(int argc, char** argv)
 
     Renderer::SdlInit();
 
-    // Setup Vulkan
-//   uint32_t extensions_count = 0;
-//    SDL_Vulkan_GetInstanceExtensions(Renderer::SdlGetWindowPtr(), &extensions_count, NULL);
-//    const char** extensions = new const char*[extensions_count];
-//    SDL_Vulkan_GetInstanceExtensions(Renderer::SdlGetWindowPtr(), &extensions_count, extensions);
+    const char** extensions = Renderer::GetRequiredExtensions();
+    uint32_t extensionsCount = Renderer::GetRequiredExtensionsCount();
 
-    SetupVulkan(extensions, extensions_count);
-
-    delete[] extensions;
+    SetupVulkan(extensions, extensionsCount);
 
     // Create Window Surface
     VkSurfaceKHR surface;

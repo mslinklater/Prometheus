@@ -36,7 +36,12 @@ public:
 
     // Main API
 
+    static const char**    GetRequiredExtensions(){ return requiredExtensions.data(); }
+    static uint32_t        GetRequiredExtensionsCount(){ return requiredExtensions.size(); }
+
+    // old
     EError Init();
+
     EError Shutdown();
 	bool Validation(){ return validation; }
 

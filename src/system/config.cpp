@@ -35,7 +35,7 @@ void Config::ParseCommandLine(int argc, char* argv[])
 
 void Config::Initialise()
 {
-    std::string configPath("config.txt");
+    std::string configPath("../config.txt");
 
     // load from file
 

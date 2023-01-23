@@ -29,6 +29,7 @@ Renderer::~Renderer()
 EError Renderer::SdlInit()
 {
     assert(!sdlInitialised);
+    LOGINFO("Renderer::SdlInit()");
 
     // Create an SDL window that supports Vulkan rendering.
     if (SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
@@ -186,7 +187,6 @@ EError Renderer::Init()
     LOGVERBOSE("Renderer:Init()");
     assert(sdlInitialised);
 
-//	InitSDL();
 	validation = Config::Instance()->GetBool("vulkan.instance.validation");
 
     // Get available instance layers
