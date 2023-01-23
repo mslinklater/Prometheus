@@ -12,6 +12,13 @@
 #include "system/config.h"
 #include "system/log.h"
 
+bool Renderer::sdlInitialised = false;
+SDL_WindowFlags Renderer::sdlWindowFlags;
+SDL_Window* Renderer::pSdlWindow;
+
+std::vector<const char*> Renderer::requiredExtensions;
+std::vector<const char*> Renderer::optionalExtensions;
+
 Renderer::Renderer()
 : validation(false)
 {}
@@ -19,36 +26,47 @@ Renderer::Renderer()
 Renderer::~Renderer()
 {}
 
-EError Renderer::InitSDL()
+EError Renderer::SdlInit()
 {
+    assert(!sdlInitialised);
+
     // Create an SDL window that supports Vulkan rendering.
-    if (SDL_Init(SDL_INIT_VIDEO) != 0)
+    if (SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
     {
         return ErrorLogAndReturn(EError::SDL_UnableToInitialize);
     }
 
-    window = SDL_CreateWindow("Prometheus", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_VULKAN);
+    sdlWindowFlags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 
-    if (window == NULL)
+    pSdlWindow = SDL_CreateWindow("Prometheus", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, sdlWindowFlags);
+
+    if (pSdlWindow == NULL)
     {
         return ErrorLogAndReturn(EError::SDL_CouldNotCreateWindow);
     }
 
     // Get WSI extensions from SDL (we can add more if we like - we just can't
     // remove these)
-    unsigned extension_count;
-    if (!SDL_Vulkan_GetInstanceExtensions(window, &extension_count, NULL))
+    unsigned extensionCount;
+    if (!SDL_Vulkan_GetInstanceExtensions(pSdlWindow, &extensionCount, NULL))
     {
         return ErrorLogAndReturn(EError::SDL_CouldNotGetRequiredVulkanExtensions);
     }
 
-    requiredExtensions.resize(extension_count);
+    std::vector<const char*> sdlExtensions;
+    sdlExtensions.resize(extensionCount);
 
-    if (!SDL_Vulkan_GetInstanceExtensions(window, &extension_count, requiredExtensions.data()))
+    if (!SDL_Vulkan_GetInstanceExtensions(pSdlWindow, &extensionCount, sdlExtensions.data()))
     {
         return ErrorLogAndReturn(EError::SDL_CouldNotGetRequiredVulkanExtensions);
     }
-	
+
+    // copy sdl extensions to required extensions
+
+    for(auto ext : sdlExtensions)
+        requiredExtensions.push_back(ext);
+
+    sdlInitialised = true;
 	return EError::OK;
 }
 
@@ -166,8 +184,9 @@ bool Renderer::CheckRequiredExtensions()
 EError Renderer::Init()
 {
     LOGVERBOSE("Renderer:Init()");
+    assert(sdlInitialised);
 
-	InitSDL();
+//	InitSDL();
 	validation = Config::Instance()->GetBool("vulkan.instance.validation");
 
     // Get available instance layers
@@ -306,7 +325,7 @@ EError Renderer::Init()
     }
 
     // Create a Vulkan surface for rendering
-    if (!SDL_Vulkan_CreateSurface(window, instance, &surface))
+    if (!SDL_Vulkan_CreateSurface(pSdlWindow, instance, &surface))
     {
         return ErrorLogAndReturn(EError::SDL_CouldNotCreateVulkanSurface);
     }
@@ -335,7 +354,7 @@ EError Renderer::Init()
 EError Renderer::Shutdown()
 {
     vkDestroySurfaceKHR(instance, surface, NULL);
-    SDL_DestroyWindow(window);
+    SDL_DestroyWindow(pSdlWindow);
     SDL_Quit();
     vkDestroyInstance(instance, NULL);
 
@@ -378,3 +397,11 @@ void Renderer::LogInstanceProperties()
     }
 }
 
+void Renderer::CheckVkResult(VkResult err)
+{
+    if (err == 0)
+        return;
+    fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+    if (err < 0)
+        abort();
+}

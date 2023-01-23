@@ -28,21 +28,35 @@ public:
 	Renderer();
 	virtual ~Renderer();
 
+    // SDL API
+
+    static EError SdlInit();
+    static SDL_WindowFlags SdlGetWindowFlags(){ return sdlWindowFlags; }
+    static SDL_Window* SdlGetWindowPtr(){ return pSdlWindow; }
+
+    // Main API
+
     EError Init();
     EError Shutdown();
 	bool Validation(){ return validation; }
 
+    static void CheckVkResult(VkResult err);
+
 private:
 	bool validation;
 
-    EError InitSDL();
+    // SDL
+
+    static bool sdlInitialised;
+    static SDL_WindowFlags sdlWindowFlags;
+    static SDL_Window* pSdlWindow;
+
+    // Main
 
     void LogInstanceProperties();
 	void EnableValidation();
 	void GetRequiredAndOptionalExtensions();
 	bool CheckRequiredExtensions();
-
-    SDL_Window *window;
 
     VkInstance instance;
     VkSurfaceKHR surface;
@@ -53,8 +67,8 @@ private:
     std::vector<const char *> enabledLayers;
     std::vector<VkLayerProperties> availableLayers;
 
-    std::vector<const char*> requiredExtensions;
-    std::vector<const char*> optionalExtensions;
+    static std::vector<const char*> requiredExtensions;
+    static std::vector<const char*> optionalExtensions;
 
     std::vector<const char*> requestedExtensions;
     std::vector<VkExtensionProperties> availableExtensions;

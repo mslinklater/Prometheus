@@ -5,8 +5,20 @@ project(Prometheus LANGUAGES CXX)
 find_package(SDL2 REQUIRED)
 find_package(Vulkan REQUIRED)
 
+set(CMAKE_C_FLAGS "-DVK_ENABLE_BETA_EXTENSIONS")
+set(CMAKE_CXX_FLAGS "-DVK_ENABLE_BETA_EXTENSIONS")
+
+set(SOURCE_FILES main.cpp)
+set(IMGUI_PATH "3rdparty/imgui-1.89.3")
+
+add_subdirectory(${IMGUI_PATH})
+add_subdirectory("system")
+add_subdirectory("renderer")
+
 include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${Vulkan_INCLUDE_DIRS})
+include_directories(${IMGUI_PATH})
+include_directories(".")
 
-add_executable(prometheus main.cpp imgui_impl_sdl.cpp imgui_impl_vulkan.cpp imgui_demo.cpp imgui_draw.cpp imgui_tables.cpp imgui_widgets.cpp imgui.cpp)
+add_executable(prometheus ${SOURCE_FILES})
 target_link_libraries(prometheus ${SDL2_LIBRARIES} ${Vulkan_LIBRARIES})

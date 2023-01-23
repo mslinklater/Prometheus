@@ -18,10 +18,9 @@
 #include <SDL_vulkan.h>
 #include <vulkan/vulkan.h>
 
+#include "renderer/renderer.h"
+
 //#define IMGUI_UNLIMITED_FRAME_RATE
-#ifdef _DEBUG
-#define IMGUI_VULKAN_DEBUG_REPORT
-#endif
 
 static VkAllocationCallbacks*   g_Allocator = NULL;
 static VkInstance               g_Instance = VK_NULL_HANDLE;
@@ -37,24 +36,6 @@ static ImGui_ImplVulkanH_Window g_MainWindowData;
 static uint32_t                 g_MinImageCount = 2;
 static bool                     g_SwapChainRebuild = false;
 
-static void check_vk_result(VkResult err)
-{
-    if (err == 0)
-        return;
-    fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
-    if (err < 0)
-        abort();
-}
-
-#ifdef IMGUI_VULKAN_DEBUG_REPORT
-static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object, size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
-{
-    (void)flags; (void)object; (void)location; (void)messageCode; (void)pUserData; (void)pLayerPrefix; // Unused arguments
-    fprintf(stderr, "[vulkan] Debug report from ObjectType: %i\nMessage: %s\n\n", objectType, pMessage);
-    return VK_FALSE;
-}
-#endif // IMGUI_VULKAN_DEBUG_REPORT
-
 static void SetupVulkan(const char** extensions, uint32_t extensions_count)
 {
     VkResult err;
@@ -65,54 +46,22 @@ static void SetupVulkan(const char** extensions, uint32_t extensions_count)
         create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         create_info.enabledExtensionCount = extensions_count;
         create_info.ppEnabledExtensionNames = extensions;
-#ifdef IMGUI_VULKAN_DEBUG_REPORT
-        // Enabling validation layers
-        const char* layers[] = { "VK_LAYER_KHRONOS_validation" };
-        create_info.enabledLayerCount = 1;
-        create_info.ppEnabledLayerNames = layers;
-
-        // Enable debug report extension (we need additional storage, so we duplicate the user array to add our new extension to it)
-        const char** extensions_ext = (const char**)malloc(sizeof(const char*) * (extensions_count + 1));
-        memcpy(extensions_ext, extensions, extensions_count * sizeof(const char*));
-        extensions_ext[extensions_count] = "VK_EXT_debug_report";
-        create_info.enabledExtensionCount = extensions_count + 1;
-        create_info.ppEnabledExtensionNames = extensions_ext;
-
-        // Create Vulkan Instance
-        err = vkCreateInstance(&create_info, g_Allocator, &g_Instance);
-        check_vk_result(err);
-        free(extensions_ext);
-
-        // Get the function pointer (required for any extensions)
-        auto vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(g_Instance, "vkCreateDebugReportCallbackEXT");
-        IM_ASSERT(vkCreateDebugReportCallbackEXT != NULL);
-
-        // Setup the debug report callback
-        VkDebugReportCallbackCreateInfoEXT debug_report_ci = {};
-        debug_report_ci.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-        debug_report_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-        debug_report_ci.pfnCallback = debug_report;
-        debug_report_ci.pUserData = NULL;
-        err = vkCreateDebugReportCallbackEXT(g_Instance, &debug_report_ci, g_Allocator, &g_DebugReport);
-        check_vk_result(err);
-#else
         // Create Vulkan Instance without any debug feature
         err = vkCreateInstance(&create_info, g_Allocator, &g_Instance);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
         IM_UNUSED(g_DebugReport);
-#endif
     }
 
     // Select GPU
     {
         uint32_t gpu_count;
         err = vkEnumeratePhysicalDevices(g_Instance, &gpu_count, NULL);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
         IM_ASSERT(gpu_count > 0);
 
         VkPhysicalDevice* gpus = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * gpu_count);
         err = vkEnumeratePhysicalDevices(g_Instance, &gpu_count, gpus);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
 
         // If a number >1 of GPUs got reported, find discrete GPU if present, or use first one available. This covers
         // most common cases (multi-gpu/integrated+dedicated graphics). Handling more complicated setups (multiple
@@ -166,7 +115,7 @@ static void SetupVulkan(const char** extensions, uint32_t extensions_count)
         create_info.enabledExtensionCount = device_extension_count;
         create_info.ppEnabledExtensionNames = device_extensions;
         err = vkCreateDevice(g_PhysicalDevice, &create_info, g_Allocator, &g_Device);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
         vkGetDeviceQueue(g_Device, g_QueueFamily, 0, &g_Queue);
     }
 
@@ -193,7 +142,7 @@ static void SetupVulkan(const char** extensions, uint32_t extensions_count)
         pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
         pool_info.pPoolSizes = pool_sizes;
         err = vkCreateDescriptorPool(g_Device, &pool_info, g_Allocator, &g_DescriptorPool);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
     }
 }
 
@@ -262,24 +211,24 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
         g_SwapChainRebuild = true;
         return;
     }
-    check_vk_result(err);
+    Renderer::CheckVkResult(err);
 
     ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
     {
         err = vkWaitForFences(g_Device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
 
         err = vkResetFences(g_Device, 1, &fd->Fence);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
     }
     {
         err = vkResetCommandPool(g_Device, fd->CommandPool, 0);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
         VkCommandBufferBeginInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         err = vkBeginCommandBuffer(fd->CommandBuffer, &info);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
     }
     {
         VkRenderPassBeginInfo info = {};
@@ -311,9 +260,9 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
         info.pSignalSemaphores = &render_complete_semaphore;
 
         err = vkEndCommandBuffer(fd->CommandBuffer);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
         err = vkQueueSubmit(g_Queue, 1, &info, fd->Fence);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
     }
 }
 
@@ -335,35 +284,30 @@ static void FramePresent(ImGui_ImplVulkanH_Window* wd)
         g_SwapChainRebuild = true;
         return;
     }
-    check_vk_result(err);
+    Renderer::CheckVkResult(err);
     wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->ImageCount; // Now we can use the next set of semaphores
 }
 
 int main(int argc, char** argv)
 {
-    // Setup SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        return -1;
-    }
+    Renderer renderer;
 
-    // Setup window
-    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL2+Vulkan example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    Renderer::SdlInit();
 
     // Setup Vulkan
-    uint32_t extensions_count = 0;
-    SDL_Vulkan_GetInstanceExtensions(window, &extensions_count, NULL);
-    const char** extensions = new const char*[extensions_count];
-    SDL_Vulkan_GetInstanceExtensions(window, &extensions_count, extensions);
+//   uint32_t extensions_count = 0;
+//    SDL_Vulkan_GetInstanceExtensions(Renderer::SdlGetWindowPtr(), &extensions_count, NULL);
+//    const char** extensions = new const char*[extensions_count];
+//    SDL_Vulkan_GetInstanceExtensions(Renderer::SdlGetWindowPtr(), &extensions_count, extensions);
+
     SetupVulkan(extensions, extensions_count);
+
     delete[] extensions;
 
     // Create Window Surface
     VkSurfaceKHR surface;
     VkResult err;
-    if (SDL_Vulkan_CreateSurface(window, g_Instance, &surface) == 0)
+    if (SDL_Vulkan_CreateSurface(Renderer::SdlGetWindowPtr(), g_Instance, &surface) == 0)
     {
         printf("Failed to create Vulkan surface.\n");
         return 1;
@@ -371,7 +315,7 @@ int main(int argc, char** argv)
 
     // Create Framebuffers
     int w, h;
-    SDL_GetWindowSize(window, &w, &h);
+    SDL_GetWindowSize(Renderer::SdlGetWindowPtr(), &w, &h);
     ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
     SetupVulkanWindow(wd, surface, w, h);
 
@@ -387,7 +331,7 @@ int main(int argc, char** argv)
     //ImGui::StyleColorsLight();
 
     // Setup Platform/Renderer backends
-    ImGui_ImplSDL2_InitForVulkan(window);
+    ImGui_ImplSDL2_InitForVulkan(Renderer::SdlGetWindowPtr());
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = g_Instance;
     init_info.PhysicalDevice = g_PhysicalDevice;
@@ -401,7 +345,7 @@ int main(int argc, char** argv)
     init_info.ImageCount = wd->ImageCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator = g_Allocator;
-    init_info.CheckVkResultFn = check_vk_result;
+    init_info.CheckVkResultFn = Renderer::CheckVkResult;
     ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
 
     // Load Fonts
@@ -427,12 +371,12 @@ int main(int argc, char** argv)
         VkCommandBuffer command_buffer = wd->Frames[wd->FrameIndex].CommandBuffer;
 
         err = vkResetCommandPool(g_Device, command_pool, 0);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
         VkCommandBufferBeginInfo begin_info = {};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         err = vkBeginCommandBuffer(command_buffer, &begin_info);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
 
         ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
 
@@ -441,12 +385,12 @@ int main(int argc, char** argv)
         end_info.commandBufferCount = 1;
         end_info.pCommandBuffers = &command_buffer;
         err = vkEndCommandBuffer(command_buffer);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
         err = vkQueueSubmit(g_Queue, 1, &end_info, VK_NULL_HANDLE);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
 
         err = vkDeviceWaitIdle(g_Device);
-        check_vk_result(err);
+        Renderer::CheckVkResult(err);
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
 
@@ -470,7 +414,7 @@ int main(int argc, char** argv)
             ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT)
                 done = true;
-            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
+            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(Renderer::SdlGetWindowPtr()))
                 done = true;
         }
 
@@ -478,7 +422,7 @@ int main(int argc, char** argv)
         if (g_SwapChainRebuild)
         {
             int width, height;
-            SDL_GetWindowSize(window, &width, &height);
+            SDL_GetWindowSize(Renderer::SdlGetWindowPtr(), &width, &height);
             if (width > 0 && height > 0)
             {
                 ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
@@ -547,7 +491,7 @@ int main(int argc, char** argv)
 
     // Cleanup
     err = vkDeviceWaitIdle(g_Device);
-    check_vk_result(err);
+    Renderer::CheckVkResult(err);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
@@ -555,7 +499,7 @@ int main(int argc, char** argv)
     CleanupVulkanWindow();
     CleanupVulkan();
 
-    SDL_DestroyWindow(window);
+    SDL_DestroyWindow(Renderer::SdlGetWindowPtr());
     SDL_Quit();
 
     return 0;
