@@ -20,9 +20,15 @@
 
 #include "renderer/renderer.h"
 #include "system/log.h"
+#include "configuration.h"
+
+#if VULKANINIT_IMGUI & VULKANINIT_PROMETHEUS
+#error Cannot have multiple VULKANINIT macros enabled
+#endif
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 
+#if VULKANINIT_IMGUI
 static VkAllocationCallbacks*   g_Allocator = NULL;
 static VkInstance               g_Instance = VK_NULL_HANDLE;
 static VkPhysicalDevice         g_PhysicalDevice = VK_NULL_HANDLE;
@@ -36,6 +42,7 @@ static VkDescriptorPool         g_DescriptorPool = VK_NULL_HANDLE;
 static ImGui_ImplVulkanH_Window g_MainWindowData;
 static uint32_t                 g_MinImageCount = 2;
 static bool                     g_SwapChainRebuild = false;
+#endif // VULKANINIT_IMGUI
 
 static void SetupVulkan(const char** extensions, uint32_t extensions_count)
 {
