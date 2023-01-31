@@ -12,6 +12,22 @@
 #include "system/config.h"
 #include "system/log.h"
 
+// moved over
+VkAllocationCallbacks*   Renderer::g_Allocator = NULL;
+VkInstance               Renderer::g_Instance = VK_NULL_HANDLE;
+VkPhysicalDevice         Renderer::g_PhysicalDevice = VK_NULL_HANDLE;
+VkDevice                 Renderer::g_Device = VK_NULL_HANDLE;
+uint32_t                 Renderer::g_QueueFamily = (uint32_t)-1;
+VkQueue                  Renderer::g_Queue = VK_NULL_HANDLE;
+VkDebugReportCallbackEXT Renderer::g_DebugReport = VK_NULL_HANDLE;
+VkPipelineCache          Renderer::g_PipelineCache = VK_NULL_HANDLE;
+VkDescriptorPool         Renderer::g_DescriptorPool = VK_NULL_HANDLE;
+
+ImGui_ImplVulkanH_Window Renderer::g_MainWindowData;
+uint32_t                 Renderer::g_MinImageCount = 2;
+bool                     Renderer::g_SwapChainRebuild = false;
+// end moved over
+
 bool Renderer::sdlInitialised = false;
 SDL_WindowFlags Renderer::sdlWindowFlags;
 SDL_Window* Renderer::pSdlWindow;
