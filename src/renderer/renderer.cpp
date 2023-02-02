@@ -26,12 +26,10 @@ VkDescriptorPool         Renderer::g_DescriptorPool = VK_NULL_HANDLE;
 ImGui_ImplVulkanH_Window Renderer::g_MainWindowData;
 uint32_t                 Renderer::g_MinImageCount = 2;
 bool                     Renderer::g_SwapChainRebuild = false;
+bool                     Renderer::validation = false;
 
-SDL_WindowFlags Renderer::window_flags;
-SDL_Window* Renderer::window;
 VkSurfaceKHR Renderer::vksurface;
 ImGui_ImplVulkanH_Window* Renderer::wd;
-VkResult Renderer::err;
 // end moved over
 
 bool Renderer::sdlInitialised = false;
@@ -51,7 +49,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(VkDebugReportFlagsEXT flags, 
 #endif // IMGUI_VULKAN_DEBUG_REPORT
 
 Renderer::Renderer()
-: validation(false)
 {}
 
 Renderer::~Renderer()
@@ -213,57 +210,125 @@ bool Renderer::CheckRequiredExtensions()
 	return true;
 }
 
-void Renderer::SetupSDL()
+void Renderer::Initialise(SDL_Window* window)
 {
-    // Setup SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        exit(-1);
-    }
-}
+    Renderer::SetupVulkan(window);
 
-void Renderer::SetupWindow()
-{
-    // Setup window
-    Renderer::window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    Renderer::window = SDL_CreateWindow("Prometheus", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, Renderer::window_flags);
-}
-
-void Renderer::CreateWindowSurface()
-{
     // Create Window Surface
-    if (SDL_Vulkan_CreateSurface(Renderer::window, Renderer::g_Instance, &Renderer::vksurface) == 0)
+    if (SDL_Vulkan_CreateSurface(window, Renderer::g_Instance, &Renderer::vksurface) == 0)
     {
         printf("Failed to create Vulkan surface.\n");
         exit(-1);
     }
-}
 
-void Renderer::CreateFrameBuffers()
-{
     // Create Framebuffers
     int w, h;
-    SDL_GetWindowSize(Renderer::window, &w, &h);
+    SDL_GetWindowSize(window, &w, &h);
     Renderer::wd = &Renderer::g_MainWindowData;
     Renderer::SetupVulkanWindow(Renderer::wd, Renderer::vksurface, w, h);
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsLight();
+
+//    SetupBackends(window);
+    // Setup Platform/Renderer backends
+    ImGui_ImplSDL2_InitForVulkan(window);
+    ImGui_ImplVulkan_InitInfo init_info = {};
+    init_info.Instance = Renderer::g_Instance;
+    init_info.PhysicalDevice = Renderer::g_PhysicalDevice;
+    init_info.Device = Renderer::g_Device;
+    init_info.QueueFamily = Renderer::g_QueueFamily;
+    init_info.Queue = Renderer::g_Queue;
+    init_info.PipelineCache = Renderer::g_PipelineCache;
+    init_info.DescriptorPool = Renderer::g_DescriptorPool;
+    init_info.Subpass = 0;
+    init_info.MinImageCount = Renderer::g_MinImageCount;
+    init_info.ImageCount = Renderer::wd->ImageCount;
+    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    init_info.Allocator = Renderer::g_Allocator;
+    init_info.CheckVkResultFn = Renderer::CheckVkResult;
+    ImGui_ImplVulkan_Init(&init_info, Renderer::wd->RenderPass);
+
+//    LoadFonts();
+    // Load Fonts
+    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
+    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
+    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
+    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
+    // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use Freetype for higher quality font rendering.
+    // - Read 'docs/FONTS.md' for more instructions and details.
+    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
+    //io.Fonts->AddFontDefault();
+    //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
+    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
+    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
+    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
+    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+    //IM_ASSERT(font != NULL);
+
+    // Upload Fonts
+    {
+        // Use any command queue
+        VkCommandPool command_pool = Renderer::wd->Frames[Renderer::wd->FrameIndex].CommandPool;
+        VkCommandBuffer command_buffer = Renderer::wd->Frames[Renderer::wd->FrameIndex].CommandBuffer;
+
+        VkResult err = vkResetCommandPool(Renderer::g_Device, command_pool, 0);
+        Renderer::CheckVkResult(err);
+        VkCommandBufferBeginInfo begin_info = {};
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        err = vkBeginCommandBuffer(command_buffer, &begin_info);
+        Renderer::CheckVkResult(err);
+
+        ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
+
+        VkSubmitInfo end_info = {};
+        end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        end_info.commandBufferCount = 1;
+        end_info.pCommandBuffers = &command_buffer;
+        err = vkEndCommandBuffer(command_buffer);
+        Renderer::CheckVkResult(err);
+        err = vkQueueSubmit(Renderer::g_Queue, 1, &end_info, VK_NULL_HANDLE);
+        Renderer::CheckVkResult(err);
+
+        err = vkDeviceWaitIdle(Renderer::g_Device);
+        Renderer::CheckVkResult(err);
+        ImGui_ImplVulkan_DestroyFontUploadObjects();
+    }
 }
 
-
-void Renderer::SetupVulkan()
+void Renderer::Cleanup()
 {
-    // Setup Vulkan
-    uint32_t extensions_count = 0;
-    SDL_Vulkan_GetInstanceExtensions(Renderer::window, &extensions_count, NULL);
-    const char** extensions = new const char*[extensions_count];
-    SDL_Vulkan_GetInstanceExtensions(Renderer::window, &extensions_count, extensions);
-    Renderer::SetupVulkan(extensions, extensions_count);
-    delete[] extensions;
+    VkResult err = vkDeviceWaitIdle(Renderer::g_Device);
+    CheckVkResult(err);
+    ImGui_ImplVulkan_Shutdown();
+    CleanupVulkanWindow();
+    CleanupVulkan();
 }
 
-void Renderer::SetupVulkan(const char** extensions, uint32_t extensions_count)
+void Renderer::SetupVulkan(SDL_Window* window)
 {
+	validation = Config::Instance()->GetBool("vulkan.instance.validation");
+
     VkResult err;
+
+	// get layers
+
+	// Get extensions required by SDL and add them to the required list
+    uint32_t extensions_count = 0;
+    SDL_Vulkan_GetInstanceExtensions(window, &extensions_count, NULL);
+    const char** extensions = new const char*[extensions_count];
+    SDL_Vulkan_GetInstanceExtensions(window, &extensions_count, extensions);
+
+
 
     // Create Vulkan Instance
     {
@@ -308,6 +373,8 @@ void Renderer::SetupVulkan(const char** extensions, uint32_t extensions_count)
         IM_UNUSED(Renderer::g_DebugReport);
 #endif
     }
+
+    delete[] extensions;
 
     // Select GPU
     {
@@ -455,6 +522,28 @@ void Renderer::CleanupVulkanWindow()
 {
     ImGui_ImplVulkanH_DestroyWindow(Renderer::g_Instance, Renderer::g_Device, &Renderer::g_MainWindowData, Renderer::g_Allocator);
 }
+
+void Renderer::BeginFrame(SDL_Window* window)
+{
+	// Resize swap chain?
+	if (Renderer::g_SwapChainRebuild)
+	{
+		int width, height;
+		SDL_GetWindowSize(window, &width, &height);
+		if (width > 0 && height > 0)
+		{
+			ImGui_ImplVulkan_SetMinImageCount(Renderer::g_MinImageCount);
+			ImGui_ImplVulkanH_CreateOrResizeWindow(Renderer::g_Instance, Renderer::g_PhysicalDevice, Renderer::g_Device, &Renderer::g_MainWindowData, Renderer::g_QueueFamily, Renderer::g_Allocator, width, height, Renderer::g_MinImageCount);
+			Renderer::g_MainWindowData.FrameIndex = 0;
+			Renderer::g_SwapChainRebuild = false;
+		}
+	}
+
+	// Start the Dear ImGui frame
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplSDL2_NewFrame();
+}
+
 
 void Renderer::FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 {

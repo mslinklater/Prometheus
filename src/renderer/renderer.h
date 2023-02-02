@@ -28,6 +28,8 @@
 #define IMGUI_VULKAN_DEBUG_REPORT
 #endif
 
+//#define IMGUI_UNLIMITED_FRAME_RATE
+
 class SDL_Window;
 class RendererLogicalDevice;
 
@@ -72,19 +74,15 @@ public:
     static uint32_t                 g_MinImageCount;
     static bool                     g_SwapChainRebuild;
 
-	static SDL_WindowFlags window_flags;
-	static SDL_Window* window;
     static VkSurfaceKHR vksurface;
     static ImGui_ImplVulkanH_Window* wd;
-    static VkResult err;
 
-	static void SetupSDL();
-	static void SetupWindow();
-	static void SetupVulkan();
-	static void CreateWindowSurface();
-	static void CreateFrameBuffers();
+	static void Initialise(SDL_Window* window);
+	static void Cleanup();
 
-    static void SetupVulkan(const char** extensions, uint32_t extensions_count);
+	static void BeginFrame(SDL_Window* window);
+
+    static void SetupVulkan(SDL_Window* window);
     static void SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surface, int width, int height);
     static void CleanupVulkan();
     static void CleanupVulkanWindow();
@@ -92,7 +90,7 @@ public:
     static void FramePresent(ImGui_ImplVulkanH_Window* wd);
 
 private:
-	bool validation;
+	static bool validation;
 
     // SDL
 
