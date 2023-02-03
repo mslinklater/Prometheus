@@ -5,6 +5,7 @@ A selection of tech glued together into a sort of general purpose framework. Use
 
 ### Linux
 
+* cmake
 * libsdl2-dev
 * libvulkan-dev
 * vulkan-validationlayers-dev
