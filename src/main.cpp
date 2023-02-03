@@ -13,10 +13,13 @@
 
 #include <stdio.h>          // printf, fprintf
 #include <stdlib.h>         // abort
+#include "system/config.h"
 #include "renderer/renderer.h"
 
 int main(int, char**)
 {
+    Config::Initialise();
+
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
     {

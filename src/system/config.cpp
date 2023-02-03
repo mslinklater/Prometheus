@@ -4,21 +4,17 @@
 #include <sstream>
 #include <unistd.h>
 
-static Config* instance = nullptr;
-
-Config* Config::Instance()
+namespace Config
 {
-    if (instance == nullptr)
-    {
-        instance = new (Config);
+std::string currentCategory;
+std::set<std::string> categories;
 
-        instance->Initialise();
-    }
+std::map<std::string, bool> boolSettings;
+std::map<std::string, std::string> stringSettings;
+std::map<std::string, int> intSettings;
+std::map<std::string, std::vector<std::string>> stringVectorSettings;
 
-    return instance;
-}
-
-void Config::ParseCommandLine(int argc, char* argv[])
+void ParseCommandLine(int argc, char* argv[])
 {
     LOGINFO("Config:ParseCommandLine");
     // find all the booleans
@@ -33,7 +29,7 @@ void Config::ParseCommandLine(int argc, char* argv[])
     }
 }
 
-void Config::Initialise()
+void Initialise()
 {
     std::string configPath("../config.txt");
 
@@ -128,7 +124,7 @@ void Config::Initialise()
     return;
 }
 
-void Config::Dump()
+void Dump()
 {
     LOGINFO("====================");
     LOGINFO("Config::Dumping bool");
@@ -139,7 +135,7 @@ void Config::Dump()
 	}
 }
 
-bool Config::FindTypeKeyValue(const std::string& line, std::string& type, std::string& key, std::string& value)
+bool FindTypeKeyValue(const std::string& line, std::string& type, std::string& key, std::string& value)
 {
     // first lets try to detect malformed setting lines
 
@@ -170,7 +166,7 @@ bool Config::FindTypeKeyValue(const std::string& line, std::string& type, std::s
     return true;
 }
 
-bool Config::GetBool(std::string key, bool defaultValue)
+bool GetBool(std::string key, bool defaultValue)
 {
     if (boolSettings.find(key) != boolSettings.end())
     {
@@ -179,13 +175,13 @@ bool Config::GetBool(std::string key, bool defaultValue)
     return defaultValue;
 }
 
-void Config::SetBool(std::string key, bool value)
+void SetBool(std::string key, bool value)
 {
     LOGINFOF("Config:SetBool %s %s", key.c_str(), value ? "true" : "false");
     boolSettings[key] = value;
 }
 
-int Config::GetInt(std::string key, int defaultValue)
+int GetInt(std::string key, int defaultValue)
 {
     if (intSettings.find(key) != intSettings.end())
     {
@@ -194,18 +190,18 @@ int Config::GetInt(std::string key, int defaultValue)
     return defaultValue;
 }
 
-void Config::SetInt(std::string key, int value)
+void SetInt(std::string key, int value)
 {
     LOGINFOF("Config:SetInt %s %d", key.c_str(), value);
     intSettings[key] = value;
 }
 
-bool Config::StringExists(std::string key)
+bool StringExists(std::string key)
 {
     return stringSettings.find(key) != stringSettings.end();
 }
 
-const std::string Config::GetString(std::string key)
+const std::string GetString(std::string key)
 {
     if (stringSettings.find(key) != stringSettings.end())
     {
@@ -214,12 +210,12 @@ const std::string Config::GetString(std::string key)
     return "INVALID";
 }
 
-bool Config::StringVectorExists(std::string key)
+bool StringVectorExists(std::string key)
 {
     return stringVectorSettings.find(key) != stringVectorSettings.end();
 }
 
-const std::vector<std::string> Config::GetStringVector(std::string key)
+const std::vector<std::string> GetStringVector(std::string key)
 {
     if (stringVectorSettings.find(key) != stringVectorSettings.end())
     {
@@ -231,12 +227,14 @@ const std::vector<std::string> Config::GetStringVector(std::string key)
     return temp;
 }
 
-void Config::ParseFile(std::string filename)
+void ParseFile(std::string filename)
 {
     LOGINFOF("Config:ParseFile %s", filename.c_str());
 }
 
-void Config::SaveCurrentConfigToFile(std::string filename)
+void SaveCurrentConfigToFile(std::string filename)
 {
     LOGINFOF("Config:SaveCurrentConfigToFile %s", filename.c_str());
+}
+
 }

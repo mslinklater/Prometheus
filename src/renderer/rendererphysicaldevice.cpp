@@ -92,7 +92,7 @@ void RendererPhysicalDevice::LogDeviceInfo()
 	}
     LOGINFOF("Device name: %s", properties.deviceName);
 
-	if(Config::Instance()->GetBool("vulkan.devices.loginfo.layers", true))
+	if(Config::GetBool("vulkan.devices.loginfo.layers", true))
 	{
 		LOGINFO("");
 		LOGINFO("--- Layers ---");
@@ -103,7 +103,7 @@ void RendererPhysicalDevice::LogDeviceInfo()
 		}
 	}
 
-	if(Config::Instance()->GetBool("vulkan.devices.loginfo.extensions", true))
+	if(Config::GetBool("vulkan.devices.loginfo.extensions", true))
 	{
 		LOGINFO("");
 		LOGINFO("--- Extensions ---");
@@ -114,7 +114,7 @@ void RendererPhysicalDevice::LogDeviceInfo()
 		}
 	}
 
-	if(Config::Instance()->GetBool("vulkan.devices.loginfo.limits", true))
+	if(Config::GetBool("vulkan.devices.loginfo.limits", true))
 	{
 		LOGINFO("");
 		LOGINFO("--- Limits ---");
@@ -153,7 +153,7 @@ void RendererPhysicalDevice::LogDeviceInfo()
 	}
 
     // Features
-	if(Config::Instance()->GetBool("vulkan.devices.loginfo.features", true))
+	if(Config::GetBool("vulkan.devices.loginfo.features", true))
 	{
 		LOGINFO("");
 		LOGINFO("--- Features ---");
@@ -216,7 +216,7 @@ void RendererPhysicalDevice::LogDeviceInfo()
 	}
 
 	// Memory properties
-	if(Config::Instance()->GetBool("vulkan.devices.loginfo.memory", true))
+	if(Config::GetBool("vulkan.devices.loginfo.memory", true))
 	{
 		LOGINFO("");
 		LOGINFO("   --- Memory ---");
@@ -267,7 +267,7 @@ void RendererPhysicalDevice::LogDeviceInfo()
 	}
 
 	// Queue family properties
-	if(Config::Instance()->GetBool("vulkan.devices.loginfo.queues", true))
+	if(Config::GetBool("vulkan.devices.loginfo.queues", true))
 	{
 		LOGINFO("");
 		LOGINFO("   --- Queues ---");

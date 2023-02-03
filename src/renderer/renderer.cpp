@@ -324,7 +324,7 @@ void Renderer::Cleanup()
 
 void Renderer::SetupVulkan(SDL_Window* window)
 {
-	validation = Config::Instance()->GetBool("vulkan.instance.validation");
+	validation = Config::GetBool("vulkan.instance.validation");
 
     VkResult err;
 

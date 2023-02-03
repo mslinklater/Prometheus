@@ -7,10 +7,10 @@
 
 // TODO: add string vector storage
 
-class Config
+namespace Config
 {
-  public:
-    static Config* Instance();
+//  public:
+//    static Config* Instance();
 
     void ParseCommandLine(int argc, char* argv[]);
     void ParseFile(std::string filename);
@@ -27,17 +27,11 @@ class Config
 
     bool StringVectorExists(std::string key);
     const std::vector<std::string> GetStringVector(std::string key);
-  private:
+
+//private:
     void Initialise();
     void Dump();
 
     bool FindTypeKeyValue(const std::string& line, std::string& type, std::string& key, std::string& value);
 
-    std::string currentCategory;
-    std::set<std::string> categories;
-
-    std::map<std::string, bool> boolSettings;
-    std::map<std::string, std::string> stringSettings;
-    std::map<std::string, int> intSettings;
-    std::map<std::string, std::vector<std::string>> stringVectorSettings;
-};
+}

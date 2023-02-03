@@ -13,10 +13,10 @@ static Log *pInstance = nullptr;
 static char buffer[BUFFER_SIZE];
 
 Log::Log()
-: verboseActive(Config::Instance()->GetBool("log.verbose"))
-, infoActive(Config::Instance()->GetBool("log.info"))
-, warningActive(Config::Instance()->GetBool("log.warning"))
-, errorActive(Config::Instance()->GetBool("log.error"))
+: verboseActive(Config::GetBool("log.verbose"))
+, infoActive(Config::GetBool("log.info"))
+, warningActive(Config::GetBool("log.warning"))
+, errorActive(Config::GetBool("log.error"))
 {}
 
 Log::~Log() {}
