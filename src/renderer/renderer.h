@@ -30,10 +30,8 @@ class RendererLogicalDevice;
 class Renderer
 {
 public:
-// OLD
 	Renderer();
 	virtual ~Renderer();
-// ENDOLD
 
     // SDL API
 
@@ -42,9 +40,6 @@ public:
     static SDL_Window* SdlGetWindowPtr(){ return pSdlWindow; }
 
     // Main API
-
-//    static const char**    GetRequiredExtensions(){ return requiredExtensions.data(); }
-//    static uint32_t        GetRequiredExtensionsCount(){ return requiredExtensions.size(); }
 
 // OLD
 #if 0
@@ -59,37 +54,37 @@ public:
 
     static void CheckVkResult(VkResult err);
 
-    static VkAllocationCallbacks*   g_Allocator;
-    static VkInstance               g_Instance;
-    static VkPhysicalDevice         g_PhysicalDevice;
-    static VkDevice                 g_Device;
-    static uint32_t                 g_QueueFamily;
-    static VkQueue                  g_Queue;
-    static VkDebugReportCallbackEXT g_DebugReport;
-    static VkPipelineCache          g_PipelineCache;
-    static VkDescriptorPool         g_DescriptorPool;
+    VkAllocationCallbacks*   vkAllocatorCallbacks;
+    VkInstance               vkInstance;
+    VkPhysicalDevice         vkPhysicalDevice;
+    VkDevice                 vkDevice;
+    uint32_t                 vkQueueFamily;
+    VkQueue                  vkQueue;
+    VkDebugReportCallbackEXT vkDebugReport;
+    VkPipelineCache          vkPipelineCache;
+    VkDescriptorPool         vkDescriptorPool;
 
-    static ImGui_ImplVulkanH_Window g_MainWindowData;
-    static uint32_t                 g_MinImageCount;
-    static bool                     g_SwapChainRebuild;
+    ImGui_ImplVulkanH_Window mainWindowData;
+    uint32_t                 minImageCount;
+    bool                     swapChainRebuild;
 
-    static VkSurfaceKHR vksurface;
-    static ImGui_ImplVulkanH_Window* wd;
+    VkSurfaceKHR vkSurface;
+    ImGui_ImplVulkanH_Window* wd;
 
-	static void Initialise(SDL_Window* window);
-	static void Cleanup();
+	void Initialise(SDL_Window* window);
+	void Cleanup();
 
-	static void BeginFrame(SDL_Window* window);
+	void BeginFrame(SDL_Window* window);
 
-    static void SetupVulkan(SDL_Window* window);
-    static void SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surface, int width, int height);
-    static void CleanupVulkan();
-    static void CleanupVulkanWindow();
-    static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data);
-    static void FramePresent(ImGui_ImplVulkanH_Window* wd);
+    void SetupVulkan(SDL_Window* window);
+    void SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surface, int width, int height);
+    void CleanupVulkan();
+    void CleanupVulkanWindow();
+    void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data);
+    void FramePresent(ImGui_ImplVulkanH_Window* wd);
 
-private:
-	static bool validation;
+//private:
+	bool validation;
 
     // SDL
 
@@ -100,6 +95,10 @@ private:
     // Main
 
 	std::vector<VkLayerProperties> availableInstanceLayers;
+    std::vector<const char*> requiredInstanceLayers;
+
+    std::vector<const char*> requiredExtensions;
+    std::vector<const char*> optionalExtensions;
 
 // OLD
 #if 0
@@ -117,8 +116,6 @@ private:
     std::vector<const char *> enabledLayers;
     std::vector<VkLayerProperties> availableLayers;
 
-    static std::vector<const char*> requiredExtensions;
-    static std::vector<const char*> optionalExtensions;
 
     std::vector<const char*> requestedExtensions;
     std::vector<VkExtensionProperties> availableExtensions;

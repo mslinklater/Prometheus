@@ -31,7 +31,9 @@ int main(int, char**)
 	SDL_WindowFlags windowFlags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 	SDL_Window* window = SDL_CreateWindow("Prometheus", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, windowFlags);
 
-	Renderer::Initialise(window);
+	Renderer* renderer = new Renderer();
+
+	renderer->Initialise(window);
 
     // Our state
     bool show_demo_window = true;
@@ -57,7 +59,7 @@ int main(int, char**)
                 done = true;
         }
 
-		Renderer::BeginFrame(window);
+		renderer->BeginFrame(window);
 
         ImGui::NewFrame();
 
@@ -104,16 +106,16 @@ int main(int, char**)
         const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
         if (!is_minimized)
         {
-            Renderer::wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
-            Renderer::wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
-            Renderer::wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
-            Renderer::wd->ClearValue.color.float32[3] = clear_color.w;
-            Renderer::FrameRender(Renderer::wd, draw_data);
-            Renderer::FramePresent(Renderer::wd);
+            renderer->wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
+            renderer->wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
+            renderer->wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
+            renderer->wd->ClearValue.color.float32[3] = clear_color.w;
+            renderer->FrameRender(renderer->wd, draw_data);
+            renderer->FramePresent(renderer->wd);
         }
     }
 
-	Renderer::Cleanup();
+	renderer->Cleanup();
 
     // Cleanup
 

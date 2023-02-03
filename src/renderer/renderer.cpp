@@ -12,44 +12,45 @@
 #include "system/config.h"
 #include "system/log.h"
 
-// moved over
-VkAllocationCallbacks*   Renderer::g_Allocator = NULL;
-VkInstance               Renderer::g_Instance = VK_NULL_HANDLE;
-VkPhysicalDevice         Renderer::g_PhysicalDevice = VK_NULL_HANDLE;
-VkDevice                 Renderer::g_Device = VK_NULL_HANDLE;
-uint32_t                 Renderer::g_QueueFamily = (uint32_t)-1;
-VkQueue                  Renderer::g_Queue = VK_NULL_HANDLE;
-VkDebugReportCallbackEXT Renderer::g_DebugReport = VK_NULL_HANDLE;
-VkPipelineCache          Renderer::g_PipelineCache = VK_NULL_HANDLE;
-VkDescriptorPool         Renderer::g_DescriptorPool = VK_NULL_HANDLE;
-
-ImGui_ImplVulkanH_Window Renderer::g_MainWindowData;
-uint32_t                 Renderer::g_MinImageCount = 2;
-bool                     Renderer::g_SwapChainRebuild = false;
-bool                     Renderer::validation = false;
-
-VkSurfaceKHR Renderer::vksurface;
-ImGui_ImplVulkanH_Window* Renderer::wd;
-// end moved over
-
 bool Renderer::sdlInitialised = false;
 SDL_WindowFlags Renderer::sdlWindowFlags;
 SDL_Window* Renderer::pSdlWindow;
 
-#if 0
-std::vector<const char*> Renderer::requiredExtensions;
-std::vector<const char*> Renderer::optionalExtensions;
-#endif
-
-static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object, size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
+static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(	VkDebugReportFlagsEXT flags, 
+													VkDebugReportObjectTypeEXT objectType, 
+													uint64_t object, 
+													size_t location, 
+													int32_t messageCode, 
+													const char* pLayerPrefix, 
+													const char* pMessage, 
+													void* pUserData)
 {
-    (void)flags; (void)object; (void)location; (void)messageCode; (void)pUserData; (void)pLayerPrefix; // Unused arguments
-    fprintf(stderr, "[vulkan] Debug report from ObjectType: %i\nMessage: %s\n\n", objectType, pMessage);
+    (void)flags; 
+	(void)object; 
+	(void)location; 
+	(void)messageCode; 
+	(void)pUserData; 
+	(void)pLayerPrefix; // Unused arguments
+	LOGERRORF("[vulkan] Debug report from ObjectType: %i Message: %s", objectType, pMessage);
     return VK_FALSE;
 }
 
 Renderer::Renderer()
-{}
+{
+	vkAllocatorCallbacks = NULL;
+	vkInstance = VK_NULL_HANDLE;
+	vkPhysicalDevice = VK_NULL_HANDLE;
+	vkDevice = VK_NULL_HANDLE;
+	vkQueueFamily = (uint32_t)-1;
+	vkQueue = VK_NULL_HANDLE;
+	vkDebugReport = VK_NULL_HANDLE;
+	vkPipelineCache = VK_NULL_HANDLE;
+	vkDescriptorPool = VK_NULL_HANDLE;
+
+	minImageCount = 2;
+	swapChainRebuild = false;
+	validation = false;
+}
 
 Renderer::~Renderer()
 {}
@@ -220,10 +221,10 @@ bool Renderer::CheckRequiredExtensions()
 
 void Renderer::Initialise(SDL_Window* window)
 {
-    Renderer::SetupVulkan(window);
+    SetupVulkan(window);
 
     // Create Window Surface
-    if (SDL_Vulkan_CreateSurface(window, Renderer::g_Instance, &Renderer::vksurface) == 0)
+    if (SDL_Vulkan_CreateSurface(window, vkInstance, &vkSurface) == 0)
     {
         printf("Failed to create Vulkan surface.\n");
         exit(-1);
@@ -232,8 +233,8 @@ void Renderer::Initialise(SDL_Window* window)
     // Create Framebuffers
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
-    Renderer::wd = &Renderer::g_MainWindowData;
-    Renderer::SetupVulkanWindow(Renderer::wd, Renderer::vksurface, w, h);
+	wd = &mainWindowData;
+    SetupVulkanWindow(wd, vkSurface, w, h);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -250,20 +251,20 @@ void Renderer::Initialise(SDL_Window* window)
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForVulkan(window);
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = Renderer::g_Instance;
-    init_info.PhysicalDevice = Renderer::g_PhysicalDevice;
-    init_info.Device = Renderer::g_Device;
-    init_info.QueueFamily = Renderer::g_QueueFamily;
-    init_info.Queue = Renderer::g_Queue;
-    init_info.PipelineCache = Renderer::g_PipelineCache;
-    init_info.DescriptorPool = Renderer::g_DescriptorPool;
+    init_info.Instance = vkInstance;
+    init_info.PhysicalDevice = vkPhysicalDevice;
+    init_info.Device = vkDevice;
+    init_info.QueueFamily = vkQueueFamily;
+    init_info.Queue = vkQueue;
+    init_info.PipelineCache = vkPipelineCache;
+    init_info.DescriptorPool = vkDescriptorPool;
     init_info.Subpass = 0;
-    init_info.MinImageCount = Renderer::g_MinImageCount;
-    init_info.ImageCount = Renderer::wd->ImageCount;
+    init_info.MinImageCount = minImageCount;
+    init_info.ImageCount = wd->ImageCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    init_info.Allocator = Renderer::g_Allocator;
+    init_info.Allocator = vkAllocatorCallbacks;
     init_info.CheckVkResultFn = Renderer::CheckVkResult;
-    ImGui_ImplVulkan_Init(&init_info, Renderer::wd->RenderPass);
+    ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
 
 //    LoadFonts();
     // Load Fonts
@@ -285,16 +286,16 @@ void Renderer::Initialise(SDL_Window* window)
     // Upload Fonts
     {
         // Use any command queue
-        VkCommandPool command_pool = Renderer::wd->Frames[Renderer::wd->FrameIndex].CommandPool;
-        VkCommandBuffer command_buffer = Renderer::wd->Frames[Renderer::wd->FrameIndex].CommandBuffer;
+        VkCommandPool command_pool = wd->Frames[wd->FrameIndex].CommandPool;
+        VkCommandBuffer command_buffer = wd->Frames[wd->FrameIndex].CommandBuffer;
 
-        VkResult err = vkResetCommandPool(Renderer::g_Device, command_pool, 0);
-        Renderer::CheckVkResult(err);
+        VkResult err = vkResetCommandPool(vkDevice, command_pool, 0);
+        CheckVkResult(err);
         VkCommandBufferBeginInfo begin_info = {};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         err = vkBeginCommandBuffer(command_buffer, &begin_info);
-        Renderer::CheckVkResult(err);
+        CheckVkResult(err);
 
         ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
 
@@ -303,19 +304,19 @@ void Renderer::Initialise(SDL_Window* window)
         end_info.commandBufferCount = 1;
         end_info.pCommandBuffers = &command_buffer;
         err = vkEndCommandBuffer(command_buffer);
-        Renderer::CheckVkResult(err);
-        err = vkQueueSubmit(Renderer::g_Queue, 1, &end_info, VK_NULL_HANDLE);
-        Renderer::CheckVkResult(err);
+        CheckVkResult(err);
+        err = vkQueueSubmit(vkQueue, 1, &end_info, VK_NULL_HANDLE);
+        CheckVkResult(err);
 
-        err = vkDeviceWaitIdle(Renderer::g_Device);
-        Renderer::CheckVkResult(err);
+        err = vkDeviceWaitIdle(vkDevice);
+        CheckVkResult(err);
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
 }
 
 void Renderer::Cleanup()
 {
-    VkResult err = vkDeviceWaitIdle(Renderer::g_Device);
+    VkResult err = vkDeviceWaitIdle(Renderer::vkDevice);
     CheckVkResult(err);
     ImGui_ImplVulkan_Shutdown();
     CleanupVulkanWindow();
@@ -328,69 +329,92 @@ void Renderer::SetupVulkan(SDL_Window* window)
 
     VkResult err;
 
-	// get available layers
+	// Get available instance layers layers
 
-//    uint32_t numAvailableInstanceLayers;
-//    vkEnumerateInstanceLayerProperties(&numAvailableInstanceLayers, nullptr);
-//    availableInstanceLayers.resize(numAvailableInstanceLayers);
-//    vkEnumerateInstanceLayerProperties(&numAvailableInstanceLayers, &availableInstanceLayers[0]);
+    uint32_t numAvailableInstanceLayers;
+    vkEnumerateInstanceLayerProperties(&numAvailableInstanceLayers, nullptr);
+    availableInstanceLayers.resize(numAvailableInstanceLayers);
+    vkEnumerateInstanceLayerProperties(&numAvailableInstanceLayers, &availableInstanceLayers[0]);
+
+	if(Config::GetBool("vulkan.instance.loginfo.layers"))
+	{
+		for(auto layerinfo : availableInstanceLayers)
+		{
+			LOGINFOF("Vulkan::available instance layer:%s", layerinfo.layerName);
+		}
+	}
 
 	// Get extensions required by SDL and add them to the required list
-    uint32_t extensions_count = 0;
-    SDL_Vulkan_GetInstanceExtensions(window, &extensions_count, NULL);
-    const char** extensions = new const char*[extensions_count];
-    SDL_Vulkan_GetInstanceExtensions(window, &extensions_count, extensions);
+
+    uint32_t sdlExtensionsCount = 0;
+    SDL_Vulkan_GetInstanceExtensions(window, &sdlExtensionsCount, NULL);
+    const char** sdlExtensions = new const char*[sdlExtensionsCount];
+    SDL_Vulkan_GetInstanceExtensions(window, &sdlExtensionsCount, sdlExtensions);
+	for(int iExtension = 0 ; iExtension < sdlExtensionsCount ; ++iExtension)
+	{
+		requiredExtensions.push_back(sdlExtensions[iExtension]);
+	}
+	delete [] sdlExtensions;
+
+	requiredExtensions.push_back("VK_EXT_debug_report");
 
     // Create Vulkan Instance
-    {
-        VkInstanceCreateInfo create_info = {};
-        create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        create_info.enabledExtensionCount = extensions_count;
-        create_info.ppEnabledExtensionNames = extensions;
+	VkApplicationInfo applicationInfo;
+    applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    applicationInfo.pNext = NULL;
+    applicationInfo.pApplicationName = "Prometheus";
+    applicationInfo.applicationVersion = 1;
+    applicationInfo.pEngineName = "Prometheus";
+    applicationInfo.engineVersion = 1;
+    applicationInfo.apiVersion = VK_API_VERSION_1_0;
 
-        // Enabling validation layers
-        const char* layers[] = { "VK_LAYER_KHRONOS_validation" };
-        create_info.enabledLayerCount = 1;
-        create_info.ppEnabledLayerNames = layers;
+    VkInstanceCreateInfo createInfo;
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	createInfo.pNext = nullptr;
+	createInfo.flags = 0;
+	createInfo.pApplicationInfo = &applicationInfo;
 
-        // Enable debug report extension (we need additional storage, so we duplicate the user array to add our new extension to it)
-        const char** extensions_ext = (const char**)malloc(sizeof(const char*) * (extensions_count + 1));
-        memcpy(extensions_ext, extensions, extensions_count * sizeof(const char*));
-        extensions_ext[extensions_count] = "VK_EXT_debug_report";
-        create_info.enabledExtensionCount = extensions_count + 1;
-        create_info.ppEnabledExtensionNames = extensions_ext;
+    createInfo.enabledExtensionCount = requiredExtensions.size();
+    createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
-        // Create Vulkan Instance
-        err = vkCreateInstance(&create_info, Renderer::g_Allocator, &Renderer::g_Instance);
-        Renderer::CheckVkResult(err);
-        free(extensions_ext);
+	// layers
+	if(validation)
+	{
+		requiredInstanceLayers.push_back("VK_LAYER_KHRONOS_validation");
+	}
+
+    createInfo.enabledLayerCount = requiredInstanceLayers.size();
+    createInfo.ppEnabledLayerNames = requiredInstanceLayers.data();
+
+	// Create Vulkan Instance
+    err = vkCreateInstance(&createInfo, vkAllocatorCallbacks, &vkInstance);
+    CheckVkResult(err);
 
         // Get the function pointer (required for any extensions)
-        auto vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(Renderer::g_Instance, "vkCreateDebugReportCallbackEXT");
-        IM_ASSERT(vkCreateDebugReportCallbackEXT != NULL);
+    auto vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(Renderer::vkInstance, "vkCreateDebugReportCallbackEXT");
+    IM_ASSERT(vkCreateDebugReportCallbackEXT != NULL);
 
-        // Setup the debug report callback
-        VkDebugReportCallbackCreateInfoEXT debug_report_ci = {};
-        debug_report_ci.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-        debug_report_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-        debug_report_ci.pfnCallback = debug_report;
-        debug_report_ci.pUserData = NULL;
-        err = vkCreateDebugReportCallbackEXT(Renderer::g_Instance, &debug_report_ci, Renderer::g_Allocator, &Renderer::g_DebugReport);
-        Renderer::CheckVkResult(err);
-    }
+    // Setup the debug report callback
+    VkDebugReportCallbackCreateInfoEXT debug_report_ci = {};
+    debug_report_ci.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
+    debug_report_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+    debug_report_ci.pfnCallback = debug_report;
+    debug_report_ci.pUserData = NULL;
+    err = vkCreateDebugReportCallbackEXT(vkInstance, &debug_report_ci, vkAllocatorCallbacks, &vkDebugReport);
+    CheckVkResult(err);
 
-    delete[] extensions;
+//    delete[] extensions;
 
     // Select GPU
     {
         uint32_t gpu_count;
-        err = vkEnumeratePhysicalDevices(Renderer::g_Instance, &gpu_count, NULL);
-        Renderer::CheckVkResult(err);
+        err = vkEnumeratePhysicalDevices(vkInstance, &gpu_count, NULL);
+        CheckVkResult(err);
         IM_ASSERT(gpu_count > 0);
 
         VkPhysicalDevice* gpus = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * gpu_count);
-        err = vkEnumeratePhysicalDevices(Renderer::g_Instance, &gpu_count, gpus);
-        Renderer::CheckVkResult(err);
+        err = vkEnumeratePhysicalDevices(vkInstance, &gpu_count, gpus);
+        CheckVkResult(err);
 
         // If a number >1 of GPUs got reported, find discrete GPU if present, or use first one available. This covers
         // most common cases (multi-gpu/integrated+dedicated graphics). Handling more complicated setups (multiple
@@ -407,24 +431,24 @@ void Renderer::SetupVulkan(SDL_Window* window)
             }
         }
 
-        Renderer::g_PhysicalDevice = gpus[use_gpu];
+        vkPhysicalDevice = gpus[use_gpu];
         free(gpus);
     }
 
     // Select graphics queue family
     {
         uint32_t count;
-        vkGetPhysicalDeviceQueueFamilyProperties(Renderer::g_PhysicalDevice, &count, NULL);
+        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &count, NULL);
         VkQueueFamilyProperties* queues = (VkQueueFamilyProperties*)malloc(sizeof(VkQueueFamilyProperties) * count);
-        vkGetPhysicalDeviceQueueFamilyProperties(Renderer::g_PhysicalDevice, &count, queues);
+        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &count, queues);
         for (uint32_t i = 0; i < count; i++)
             if (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {
-                Renderer::g_QueueFamily = i;
+                vkQueueFamily = i;
                 break;
             }
         free(queues);
-        IM_ASSERT(Renderer::g_QueueFamily != (uint32_t)-1);
+        IM_ASSERT(vkQueueFamily != (uint32_t)-1);
     }
 
     // Create Logical Device (with 1 queue)
@@ -434,7 +458,7 @@ void Renderer::SetupVulkan(SDL_Window* window)
         const float queue_priority[] = { 1.0f };
         VkDeviceQueueCreateInfo queue_info[1] = {};
         queue_info[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queue_info[0].queueFamilyIndex = Renderer::g_QueueFamily;
+        queue_info[0].queueFamilyIndex = vkQueueFamily;
         queue_info[0].queueCount = 1;
         queue_info[0].pQueuePriorities = queue_priority;
         VkDeviceCreateInfo create_info = {};
@@ -443,9 +467,9 @@ void Renderer::SetupVulkan(SDL_Window* window)
         create_info.pQueueCreateInfos = queue_info;
         create_info.enabledExtensionCount = device_extension_count;
         create_info.ppEnabledExtensionNames = device_extensions;
-        err = vkCreateDevice(Renderer::g_PhysicalDevice, &create_info, Renderer::g_Allocator, &Renderer::g_Device);
-        Renderer::CheckVkResult(err);
-        vkGetDeviceQueue(Renderer::g_Device, Renderer::g_QueueFamily, 0, &Renderer::g_Queue);
+        err = vkCreateDevice(vkPhysicalDevice, &create_info, vkAllocatorCallbacks, &vkDevice);
+        CheckVkResult(err);
+        vkGetDeviceQueue(vkDevice, vkQueueFamily, 0, &vkQueue);
     }
 
     // Create Descriptor Pool
@@ -470,8 +494,8 @@ void Renderer::SetupVulkan(SDL_Window* window)
         pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
         pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
         pool_info.pPoolSizes = pool_sizes;
-        err = vkCreateDescriptorPool(Renderer::g_Device, &pool_info, Renderer::g_Allocator, &Renderer::g_DescriptorPool);
-        Renderer::CheckVkResult(err);
+        err = vkCreateDescriptorPool(vkDevice, &pool_info, vkAllocatorCallbacks, &vkDescriptorPool);
+		CheckVkResult(err);
     }
 }
 
@@ -483,7 +507,7 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surf
 
     // Check for WSI support
     VkBool32 res;
-    vkGetPhysicalDeviceSurfaceSupportKHR(Renderer::g_PhysicalDevice, Renderer::g_QueueFamily, wd->Surface, &res);
+    vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, vkQueueFamily, wd->Surface, &res);
     if (res != VK_TRUE)
     {
         fprintf(stderr, "Error no WSI support on physical device 0\n");
@@ -493,7 +517,7 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surf
     // Select Surface Format
     const VkFormat requestSurfaceImageFormat[] = { VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_R8G8B8_UNORM };
     const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-    wd->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(Renderer::g_PhysicalDevice, wd->Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
+    wd->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(vkPhysicalDevice, wd->Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
 
     // Select Present Mode
 #ifdef IMGUI_UNLIMITED_FRAME_RATE
@@ -501,44 +525,44 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surf
 #else
     VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_FIFO_KHR };
 #endif
-    wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(Renderer::g_PhysicalDevice, wd->Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
+    wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(vkPhysicalDevice, wd->Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
     //printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
 
     // Create SwapChain, RenderPass, Framebuffer, etc.
-    IM_ASSERT(Renderer::g_MinImageCount >= 2);
-    ImGui_ImplVulkanH_CreateOrResizeWindow(Renderer::g_Instance, Renderer::g_PhysicalDevice, Renderer::g_Device, wd, Renderer::g_QueueFamily, Renderer::g_Allocator, width, height, Renderer::g_MinImageCount);
+    IM_ASSERT(minImageCount >= 2);
+    ImGui_ImplVulkanH_CreateOrResizeWindow(vkInstance, vkPhysicalDevice, vkDevice, wd, vkQueueFamily, vkAllocatorCallbacks, width, height, minImageCount);
 }
 
 void Renderer::CleanupVulkan()
 {
-    vkDestroyDescriptorPool(Renderer::g_Device, Renderer::g_DescriptorPool, Renderer::g_Allocator);
+    vkDestroyDescriptorPool(vkDevice, vkDescriptorPool, vkAllocatorCallbacks);
 
     // Remove the debug report callback
-    auto vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(Renderer::g_Instance, "vkDestroyDebugReportCallbackEXT");
-    vkDestroyDebugReportCallbackEXT(Renderer::g_Instance, Renderer::g_DebugReport, Renderer::g_Allocator);
+    auto vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugReportCallbackEXT");
+    vkDestroyDebugReportCallbackEXT(vkInstance, vkDebugReport, vkAllocatorCallbacks);
 
-    vkDestroyDevice(Renderer::g_Device, Renderer::g_Allocator);
-    vkDestroyInstance(Renderer::g_Instance, Renderer::g_Allocator);
+    vkDestroyDevice(vkDevice, vkAllocatorCallbacks);
+    vkDestroyInstance(vkInstance, vkAllocatorCallbacks);
 }
 
 void Renderer::CleanupVulkanWindow()
 {
-    ImGui_ImplVulkanH_DestroyWindow(Renderer::g_Instance, Renderer::g_Device, &Renderer::g_MainWindowData, Renderer::g_Allocator);
+    ImGui_ImplVulkanH_DestroyWindow(vkInstance, vkDevice, &mainWindowData, vkAllocatorCallbacks);
 }
 
 void Renderer::BeginFrame(SDL_Window* window)
 {
 	// Resize swap chain?
-	if (Renderer::g_SwapChainRebuild)
+	if (swapChainRebuild)
 	{
 		int width, height;
 		SDL_GetWindowSize(window, &width, &height);
 		if (width > 0 && height > 0)
 		{
-			ImGui_ImplVulkan_SetMinImageCount(Renderer::g_MinImageCount);
-			ImGui_ImplVulkanH_CreateOrResizeWindow(Renderer::g_Instance, Renderer::g_PhysicalDevice, Renderer::g_Device, &Renderer::g_MainWindowData, Renderer::g_QueueFamily, Renderer::g_Allocator, width, height, Renderer::g_MinImageCount);
-			Renderer::g_MainWindowData.FrameIndex = 0;
-			Renderer::g_SwapChainRebuild = false;
+			ImGui_ImplVulkan_SetMinImageCount(minImageCount);
+			ImGui_ImplVulkanH_CreateOrResizeWindow(vkInstance, vkPhysicalDevice, vkDevice, &mainWindowData, vkQueueFamily, vkAllocatorCallbacks, width, height, minImageCount);
+			mainWindowData.FrameIndex = 0;
+			swapChainRebuild = false;
 		}
 	}
 
@@ -554,30 +578,30 @@ void Renderer::FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 
     VkSemaphore image_acquired_semaphore  = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
     VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
-    err = vkAcquireNextImageKHR(Renderer::g_Device, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
+    err = vkAcquireNextImageKHR(vkDevice, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
     {
-        Renderer::g_SwapChainRebuild = true;
+        swapChainRebuild = true;
         return;
     }
-    Renderer::CheckVkResult(err);
+    CheckVkResult(err);
 
     ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
     {
-        err = vkWaitForFences(Renderer::g_Device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
-        Renderer::CheckVkResult(err);
+        err = vkWaitForFences(vkDevice, 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
+        CheckVkResult(err);
 
-        err = vkResetFences(Renderer::g_Device, 1, &fd->Fence);
-        Renderer::CheckVkResult(err);
+        err = vkResetFences(vkDevice, 1, &fd->Fence);
+        CheckVkResult(err);
     }
     {
-        err = vkResetCommandPool(Renderer::g_Device, fd->CommandPool, 0);
-        Renderer::CheckVkResult(err);
+        err = vkResetCommandPool(vkDevice, fd->CommandPool, 0);
+        CheckVkResult(err);
         VkCommandBufferBeginInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         err = vkBeginCommandBuffer(fd->CommandBuffer, &info);
-        Renderer::CheckVkResult(err);
+        CheckVkResult(err);
     }
     {
         VkRenderPassBeginInfo info = {};
@@ -609,15 +633,15 @@ void Renderer::FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
         info.pSignalSemaphores = &render_complete_semaphore;
 
         err = vkEndCommandBuffer(fd->CommandBuffer);
-        Renderer::CheckVkResult(err);
-        err = vkQueueSubmit(Renderer::g_Queue, 1, &info, fd->Fence);
-        Renderer::CheckVkResult(err);
+        CheckVkResult(err);
+        err = vkQueueSubmit(vkQueue, 1, &info, fd->Fence);
+        CheckVkResult(err);
     }
 }
 
 void Renderer::FramePresent(ImGui_ImplVulkanH_Window* wd)
 {
-    if (Renderer::g_SwapChainRebuild)
+    if (swapChainRebuild)
         return;
     VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
     VkPresentInfoKHR info = {};
@@ -627,13 +651,13 @@ void Renderer::FramePresent(ImGui_ImplVulkanH_Window* wd)
     info.swapchainCount = 1;
     info.pSwapchains = &wd->Swapchain;
     info.pImageIndices = &wd->FrameIndex;
-    VkResult err = vkQueuePresentKHR(Renderer::g_Queue, &info);
+    VkResult err = vkQueuePresentKHR(vkQueue, &info);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
     {
-        Renderer::g_SwapChainRebuild = true;
+        swapChainRebuild = true;
         return;
     }
-    Renderer::CheckVkResult(err);
+    CheckVkResult(err);
     wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->ImageCount; // Now we can use the next set of semaphores
 }
 

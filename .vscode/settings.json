@@ -2,5 +2,13 @@
     "cmake.sourceDirectory": "${workspaceFolder}/src",
     "files.exclude": {
         "build": false
-    }
+	},
+	"files.associations": {
+		"functional": "cpp",
+		"sstream": "cpp",
+		"stdexcept": "cpp",
+		"tuple": "cpp",
+		"typeinfo": "cpp",
+		"queue": "cpp"
+	}
 }
