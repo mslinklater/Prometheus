@@ -98,6 +98,9 @@ private:
     static SDL_Window* pSdlWindow;
 
     // Main
+
+	std::vector<VkLayerProperties> availableInstanceLayers;
+
 // OLD
 #if 0
     void LogInstanceProperties();

@@ -328,15 +328,18 @@ void Renderer::SetupVulkan(SDL_Window* window)
 
     VkResult err;
 
-	// get layers
+	// get available layers
+
+//    uint32_t numAvailableInstanceLayers;
+//    vkEnumerateInstanceLayerProperties(&numAvailableInstanceLayers, nullptr);
+//    availableInstanceLayers.resize(numAvailableInstanceLayers);
+//    vkEnumerateInstanceLayerProperties(&numAvailableInstanceLayers, &availableInstanceLayers[0]);
 
 	// Get extensions required by SDL and add them to the required list
     uint32_t extensions_count = 0;
     SDL_Vulkan_GetInstanceExtensions(window, &extensions_count, NULL);
     const char** extensions = new const char*[extensions_count];
     SDL_Vulkan_GetInstanceExtensions(window, &extensions_count, extensions);
-
-
 
     // Create Vulkan Instance
     {
