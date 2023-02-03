@@ -24,20 +24,16 @@
 
 #include "rendererphysicaldevice.h"
 
-#ifdef _DEBUG
-#define IMGUI_VULKAN_DEBUG_REPORT
-#endif
-
-//#define IMGUI_UNLIMITED_FRAME_RATE
-
 class SDL_Window;
 class RendererLogicalDevice;
 
 class Renderer
 {
 public:
+// OLD
 	Renderer();
 	virtual ~Renderer();
+// ENDOLD
 
     // SDL API
 
@@ -47,18 +43,21 @@ public:
 
     // Main API
 
-    static const char**    GetRequiredExtensions(){ return requiredExtensions.data(); }
-    static uint32_t        GetRequiredExtensionsCount(){ return requiredExtensions.size(); }
+//    static const char**    GetRequiredExtensions(){ return requiredExtensions.data(); }
+//    static uint32_t        GetRequiredExtensionsCount(){ return requiredExtensions.size(); }
 
-    // old
+// OLD
+#if 0
     EError Init();
 
     EError Shutdown();
 	bool Validation(){ return validation; }
-
-    static void CheckVkResult(VkResult err);
+#endif
+// ENDOLD
 
     // moved over from imgui sample...
+
+    static void CheckVkResult(VkResult err);
 
     static VkAllocationCallbacks*   g_Allocator;
     static VkInstance               g_Instance;
@@ -99,7 +98,8 @@ private:
     static SDL_Window* pSdlWindow;
 
     // Main
-
+// OLD
+#if 0
     void LogInstanceProperties();
 	void EnableValidation();
 	void GetRequiredAndOptionalExtensions();
@@ -123,4 +123,6 @@ private:
     std::vector<RendererPhysicalDevice> physicalDevices;
 	int	chosenPhysicalDevice;
 	std::shared_ptr<RendererLogicalDevice> pLogicalDevice;
+#endif
+// ENDOLD
 };

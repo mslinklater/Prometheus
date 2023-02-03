@@ -36,17 +36,17 @@ bool Renderer::sdlInitialised = false;
 SDL_WindowFlags Renderer::sdlWindowFlags;
 SDL_Window* Renderer::pSdlWindow;
 
+#if 0
 std::vector<const char*> Renderer::requiredExtensions;
 std::vector<const char*> Renderer::optionalExtensions;
+#endif
 
-#ifdef IMGUI_VULKAN_DEBUG_REPORT
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object, size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
 {
     (void)flags; (void)object; (void)location; (void)messageCode; (void)pUserData; (void)pLayerPrefix; // Unused arguments
     fprintf(stderr, "[vulkan] Debug report from ObjectType: %i\nMessage: %s\n\n", objectType, pMessage);
     return VK_FALSE;
 }
-#endif // IMGUI_VULKAN_DEBUG_REPORT
 
 Renderer::Renderer()
 {}
@@ -54,6 +54,7 @@ Renderer::Renderer()
 Renderer::~Renderer()
 {}
 
+#if 0
 EError Renderer::SdlInit()
 {
     assert(!sdlInitialised);
@@ -98,7 +99,9 @@ EError Renderer::SdlInit()
     sdlInitialised = true;
 	return EError::OK;
 }
+#endif
 
+#if 0
 void Renderer::EnableValidation()
 {
 	const std::vector<const char*> requiredLayers = {
@@ -126,7 +129,9 @@ void Renderer::EnableValidation()
 		}
 	}
 }
+#endif
 
+#if 0
 void Renderer::GetRequiredAndOptionalExtensions()
 {
 	// TODO: Move the SDL extension injection to here
@@ -137,7 +142,9 @@ void Renderer::GetRequiredAndOptionalExtensions()
 		optionalExtensions.push_back("VK_EXT_DEBUG_UTILS_EXTENSION_NAME");
 	}
 }
+#endif
 
+#if 0
 bool Renderer::CheckRequiredExtensions()
 {
 	// go through required extensions and check they exist in the available extensions list
@@ -209,6 +216,7 @@ bool Renderer::CheckRequiredExtensions()
 	}
 	return true;
 }
+#endif
 
 void Renderer::Initialise(SDL_Window* window)
 {
@@ -336,7 +344,7 @@ void Renderer::SetupVulkan(SDL_Window* window)
         create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         create_info.enabledExtensionCount = extensions_count;
         create_info.ppEnabledExtensionNames = extensions;
-#ifdef IMGUI_VULKAN_DEBUG_REPORT
+
         // Enabling validation layers
         const char* layers[] = { "VK_LAYER_KHRONOS_validation" };
         create_info.enabledLayerCount = 1;
@@ -366,12 +374,6 @@ void Renderer::SetupVulkan(SDL_Window* window)
         debug_report_ci.pUserData = NULL;
         err = vkCreateDebugReportCallbackEXT(Renderer::g_Instance, &debug_report_ci, Renderer::g_Allocator, &Renderer::g_DebugReport);
         Renderer::CheckVkResult(err);
-#else
-        // Create Vulkan Instance without any debug feature
-        err = vkCreateInstance(&create_info, Renderer::g_Allocator, &Renderer::g_Instance);
-        Renderer::CheckVkResult(err);
-        IM_UNUSED(Renderer::g_DebugReport);
-#endif
     }
 
     delete[] extensions;
@@ -508,11 +510,9 @@ void Renderer::CleanupVulkan()
 {
     vkDestroyDescriptorPool(Renderer::g_Device, Renderer::g_DescriptorPool, Renderer::g_Allocator);
 
-#ifdef IMGUI_VULKAN_DEBUG_REPORT
     // Remove the debug report callback
     auto vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(Renderer::g_Instance, "vkDestroyDebugReportCallbackEXT");
     vkDestroyDebugReportCallbackEXT(Renderer::g_Instance, Renderer::g_DebugReport, Renderer::g_Allocator);
-#endif // IMGUI_VULKAN_DEBUG_REPORT
 
     vkDestroyDevice(Renderer::g_Device, Renderer::g_Allocator);
     vkDestroyInstance(Renderer::g_Instance, Renderer::g_Allocator);
@@ -634,6 +634,7 @@ void Renderer::FramePresent(ImGui_ImplVulkanH_Window* wd)
     wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->ImageCount; // Now we can use the next set of semaphores
 }
 
+#if 0
 EError Renderer::Init()
 {
     LOGVERBOSE("Renderer:Init()");
@@ -802,7 +803,9 @@ EError Renderer::Init()
 
     return EError::OK;
 }
+#endif
 
+#if 0
 EError Renderer::Shutdown()
 {
     vkDestroySurfaceKHR(instance, surface, NULL);
@@ -812,7 +815,9 @@ EError Renderer::Shutdown()
 
     return EError::OK;
 }
+#endif
 
+#if 0
 void Renderer::LogInstanceProperties()
 {
     LOGINFO("=== Vulkan instance info ===");
@@ -848,6 +853,7 @@ void Renderer::LogInstanceProperties()
         }
     }
 }
+#endif
 
 void Renderer::CheckVkResult(VkResult err)
 {
