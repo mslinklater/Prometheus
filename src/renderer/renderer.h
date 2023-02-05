@@ -53,7 +53,7 @@ public:
     VkPipelineCache          vkPipelineCache;
     VkDescriptorPool         vkDescriptorPool;
 
-    ImGui_ImplVulkanH_Window mainWindowData;
+    ImGui_ImplVulkanH_Window imguiVulkanWindowData;
     uint32_t                 minImageCount;
     bool                     swapChainRebuild;
 
@@ -93,6 +93,7 @@ private:
 	void SetupPhysicalDevice();
 	void SetupQueueFamilies();
 	void SetupLogicalDevice();
+	void SetupDescriptorPool();
 
 	SDL_Window* sdlWindow;
 };

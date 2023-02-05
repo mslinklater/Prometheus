@@ -235,7 +235,7 @@ void Renderer::Initialise(SDL_Window* window)
     // Create Framebuffers
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
-	imguiWindow = &mainWindowData;
+	imguiWindow = &imguiVulkanWindowData;
     SetupVulkanWindow(imguiWindow, vkSurface, w, h);
 
     // Setup Dear ImGui context
@@ -461,12 +461,15 @@ void Renderer::SetupLogicalDevice()
 
 	std::vector<VkDeviceQueueCreateInfo> requestedQueueInfo;
 
+
 	VkDeviceQueueCreateInfo graphicsQueueInfo = {};
 	graphicsQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	graphicsQueueInfo.queueFamilyIndex = vkQueueGraphicsFamily;
 	graphicsQueueInfo.queueCount = 1;
 	graphicsQueueInfo.pQueuePriorities = queue_priority;
 	requestedQueueInfo.push_back(graphicsQueueInfo);
+
+	// Issue:#18
 
 	VkDeviceCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -478,6 +481,32 @@ void Renderer::SetupLogicalDevice()
 	CheckVkResult(err);
 
 	vkGetDeviceQueue(vkDevice, vkQueueGraphicsFamily, 0, &vkGraphicsQueue);
+}
+
+void Renderer::SetupDescriptorPool()
+{
+	VkDescriptorPoolSize pool_sizes[] =
+	{
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+	};
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
+	pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+	pool_info.pPoolSizes = pool_sizes;
+	VkResult err = vkCreateDescriptorPool(vkDevice, &pool_info, vkAllocatorCallbacks, &vkDescriptorPool);
+	CheckVkResult(err);
 }
 
 void Renderer::Setup()
@@ -515,6 +544,8 @@ void Renderer::Setup()
     createInfo.enabledLayerCount = requiredInstanceLayers.size();
     createInfo.ppEnabledLayerNames = requiredInstanceLayers.data();
 
+	// Issue#17 - output which extensions & layers are actually requested
+
 	// Create Vulkan Instance
     err = vkCreateInstance(&createInfo, vkAllocatorCallbacks, &vkInstance);
     CheckVkResult(err);
@@ -527,32 +558,7 @@ void Renderer::Setup()
 	SetupPhysicalDevice();
 	SetupQueueFamilies();
 	SetupLogicalDevice();
-	
-    // Create Descriptor Pool
-    {
-        VkDescriptorPoolSize pool_sizes[] =
-        {
-            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-        };
-        VkDescriptorPoolCreateInfo pool_info = {};
-        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
-        pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
-        pool_info.pPoolSizes = pool_sizes;
-        err = vkCreateDescriptorPool(vkDevice, &pool_info, vkAllocatorCallbacks, &vkDescriptorPool);
-		CheckVkResult(err);
-    }
+	SetupDescriptorPool();
 }
 
 // All the ImGui_ImplVulkanH_XXX structures/functions are optional helpers used by the demo.
@@ -572,7 +578,10 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* _imguiWindow, VkSurfa
     }
 
     // Select Surface Format
-    const VkFormat requestSurfaceImageFormat[] = { VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_R8G8B8_UNORM };
+    const VkFormat requestSurfaceImageFormat[] = {	VK_FORMAT_B8G8R8A8_UNORM, 
+													VK_FORMAT_R8G8B8A8_UNORM, 
+													VK_FORMAT_B8G8R8_UNORM, 
+													VK_FORMAT_R8G8B8_UNORM };
     const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
     imguiWindow->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(vkPhysicalDevice, imguiWindow->Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
 
@@ -604,7 +613,7 @@ void Renderer::CleanupVulkan()
 
 void Renderer::CleanupVulkanWindow()
 {
-    ImGui_ImplVulkanH_DestroyWindow(vkInstance, vkDevice, &mainWindowData, vkAllocatorCallbacks);
+    ImGui_ImplVulkanH_DestroyWindow(vkInstance, vkDevice, &imguiVulkanWindowData, vkAllocatorCallbacks);
 }
 
 void Renderer::BeginFrame()
@@ -617,8 +626,8 @@ void Renderer::BeginFrame()
 		if (width > 0 && height > 0)
 		{
 			ImGui_ImplVulkan_SetMinImageCount(minImageCount);
-			ImGui_ImplVulkanH_CreateOrResizeWindow(vkInstance, vkPhysicalDevice, vkDevice, &mainWindowData, vkQueueGraphicsFamily, vkAllocatorCallbacks, width, height, minImageCount);
-			mainWindowData.FrameIndex = 0;
+			ImGui_ImplVulkanH_CreateOrResizeWindow(vkInstance, vkPhysicalDevice, vkDevice, &imguiVulkanWindowData, vkQueueGraphicsFamily, vkAllocatorCallbacks, width, height, minImageCount);
+			imguiVulkanWindowData.FrameIndex = 0;
 			swapChainRebuild = false;
 		}
 	}
