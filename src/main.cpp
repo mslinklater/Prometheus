@@ -59,7 +59,7 @@ int main(int, char**)
                 done = true;
         }
 
-		renderer->BeginFrame(window);
+		renderer->BeginFrame();
 
         ImGui::NewFrame();
 
@@ -106,12 +106,12 @@ int main(int, char**)
         const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
         if (!is_minimized)
         {
-            renderer->wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
-            renderer->wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
-            renderer->wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
-            renderer->wd->ClearValue.color.float32[3] = clear_color.w;
-            renderer->FrameRender(renderer->wd, draw_data);
-            renderer->FramePresent(renderer->wd);
+            renderer->imguiWindow->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
+            renderer->imguiWindow->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
+            renderer->imguiWindow->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
+            renderer->imguiWindow->ClearValue.color.float32[3] = clear_color.w;
+            renderer->FrameRender(draw_data);
+            renderer->FramePresent();
         }
     }
 

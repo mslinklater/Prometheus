@@ -7,6 +7,13 @@
 [bool]dumpafterinit=false
 
 ;-------------------
+; application
+;-------------------
+
+[category]application
+[string]name=Prometheus
+
+;-------------------
 ; vulkan
 ;-------------------
 
@@ -18,8 +25,8 @@
 
 [bool]instance.validation=true
 [bool]instance.loginfo=true
-[bool]instance.loginfo.extensions=false
-[bool]instance.loginfo.layers=false
+[bool]instance.loginfo.extensions=true
+[bool]instance.loginfo.layers=true
 
 [bool]devices.loginfo=true
 [bool]devices.loginfo.layers=false

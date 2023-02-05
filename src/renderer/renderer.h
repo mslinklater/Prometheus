@@ -41,25 +41,14 @@ public:
 
     // Main API
 
-// OLD
-#if 0
-    EError Init();
-
-    EError Shutdown();
-	bool Validation(){ return validation; }
-#endif
-// ENDOLD
-
-    // moved over from imgui sample...
-
     static void CheckVkResult(VkResult err);
 
     VkAllocationCallbacks*   vkAllocatorCallbacks;
     VkInstance               vkInstance;
     VkPhysicalDevice         vkPhysicalDevice;
     VkDevice                 vkDevice;
-    uint32_t                 vkQueueFamily;
-    VkQueue                  vkQueue;
+    uint32_t                 vkQueueGraphicsFamily;
+    VkQueue                  vkGraphicsQueue;
     VkDebugReportCallbackEXT vkDebugReport;
     VkPipelineCache          vkPipelineCache;
     VkDescriptorPool         vkDescriptorPool;
@@ -69,21 +58,20 @@ public:
     bool                     swapChainRebuild;
 
     VkSurfaceKHR vkSurface;
-    ImGui_ImplVulkanH_Window* wd;
+    ImGui_ImplVulkanH_Window* imguiWindow;
 
 	void Initialise(SDL_Window* window);
 	void Cleanup();
 
-	void BeginFrame(SDL_Window* window);
+	void BeginFrame();
 
-    void SetupVulkan(SDL_Window* window);
-    void SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surface, int width, int height);
+    void Setup();
+    void SetupVulkanWindow(ImGui_ImplVulkanH_Window* imguiWindow, VkSurfaceKHR surface, int width, int height);
     void CleanupVulkan();
     void CleanupVulkanWindow();
-    void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data);
-    void FramePresent(ImGui_ImplVulkanH_Window* wd);
+    void FrameRender(ImDrawData* draw_data);
+    void FramePresent();
 
-//private:
 	bool validation;
 
     // SDL
@@ -94,35 +82,17 @@ public:
 
     // Main
 
-	std::vector<VkLayerProperties> availableInstanceLayers;
     std::vector<const char*> requiredInstanceLayers;
+    std::vector<const char*> requiredInstanceExtensions;
+    std::vector<const char*> requiredDeviceExtensions;
 
-    std::vector<const char*> requiredExtensions;
-    std::vector<const char*> optionalExtensions;
+private:
+	void SetupInstanceLayers();
+	void SetupInstanceExtensions();
+	void SetupDebugReportCallback();
+	void SetupPhysicalDevice();
+	void SetupQueueFamilies();
+	void SetupLogicalDevice();
 
-// OLD
-#if 0
-    void LogInstanceProperties();
-	void EnableValidation();
-	void GetRequiredAndOptionalExtensions();
-	bool CheckRequiredExtensions();
-
-    VkInstance instance;
-    VkSurfaceKHR surface;
-
-    VkApplicationInfo applicationInfo;
-    VkInstanceCreateInfo instanceInfo;
-
-    std::vector<const char *> enabledLayers;
-    std::vector<VkLayerProperties> availableLayers;
-
-
-    std::vector<const char*> requestedExtensions;
-    std::vector<VkExtensionProperties> availableExtensions;
-
-    std::vector<RendererPhysicalDevice> physicalDevices;
-	int	chosenPhysicalDevice;
-	std::shared_ptr<RendererLogicalDevice> pLogicalDevice;
-#endif
-// ENDOLD
+	SDL_Window* sdlWindow;
 };

@@ -41,8 +41,8 @@ Renderer::Renderer()
 	vkInstance = VK_NULL_HANDLE;
 	vkPhysicalDevice = VK_NULL_HANDLE;
 	vkDevice = VK_NULL_HANDLE;
-	vkQueueFamily = (uint32_t)-1;
-	vkQueue = VK_NULL_HANDLE;
+	vkQueueGraphicsFamily = (uint32_t)-1;
+	vkGraphicsQueue = VK_NULL_HANDLE;
 	vkDebugReport = VK_NULL_HANDLE;
 	vkPipelineCache = VK_NULL_HANDLE;
 	vkDescriptorPool = VK_NULL_HANDLE;
@@ -221,7 +221,9 @@ bool Renderer::CheckRequiredExtensions()
 
 void Renderer::Initialise(SDL_Window* window)
 {
-    SetupVulkan(window);
+	sdlWindow = window;
+
+    Setup();
 
     // Create Window Surface
     if (SDL_Vulkan_CreateSurface(window, vkInstance, &vkSurface) == 0)
@@ -233,8 +235,8 @@ void Renderer::Initialise(SDL_Window* window)
     // Create Framebuffers
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
-	wd = &mainWindowData;
-    SetupVulkanWindow(wd, vkSurface, w, h);
+	imguiWindow = &mainWindowData;
+    SetupVulkanWindow(imguiWindow, vkSurface, w, h);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -254,40 +256,23 @@ void Renderer::Initialise(SDL_Window* window)
     init_info.Instance = vkInstance;
     init_info.PhysicalDevice = vkPhysicalDevice;
     init_info.Device = vkDevice;
-    init_info.QueueFamily = vkQueueFamily;
-    init_info.Queue = vkQueue;
+    init_info.QueueFamily = vkQueueGraphicsFamily;
+    init_info.Queue = vkGraphicsQueue;
     init_info.PipelineCache = vkPipelineCache;
     init_info.DescriptorPool = vkDescriptorPool;
     init_info.Subpass = 0;
     init_info.MinImageCount = minImageCount;
-    init_info.ImageCount = wd->ImageCount;
+    init_info.ImageCount = imguiWindow->ImageCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator = vkAllocatorCallbacks;
     init_info.CheckVkResultFn = Renderer::CheckVkResult;
-    ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
-
-//    LoadFonts();
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use Freetype for higher quality font rendering.
-    // - Read 'docs/FONTS.md' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    //IM_ASSERT(font != NULL);
+    ImGui_ImplVulkan_Init(&init_info, imguiWindow->RenderPass);
 
     // Upload Fonts
     {
         // Use any command queue
-        VkCommandPool command_pool = wd->Frames[wd->FrameIndex].CommandPool;
-        VkCommandBuffer command_buffer = wd->Frames[wd->FrameIndex].CommandBuffer;
+        VkCommandPool command_pool = imguiWindow->Frames[imguiWindow->FrameIndex].CommandPool;
+        VkCommandBuffer command_buffer = imguiWindow->Frames[imguiWindow->FrameIndex].CommandBuffer;
 
         VkResult err = vkResetCommandPool(vkDevice, command_pool, 0);
         CheckVkResult(err);
@@ -305,7 +290,7 @@ void Renderer::Initialise(SDL_Window* window)
         end_info.pCommandBuffers = &command_buffer;
         err = vkEndCommandBuffer(command_buffer);
         CheckVkResult(err);
-        err = vkQueueSubmit(vkQueue, 1, &end_info, VK_NULL_HANDLE);
+        err = vkQueueSubmit(vkGraphicsQueue, 1, &end_info, VK_NULL_HANDLE);
         CheckVkResult(err);
 
         err = vkDeviceWaitIdle(vkDevice);
@@ -323,76 +308,90 @@ void Renderer::Cleanup()
     CleanupVulkan();
 }
 
-void Renderer::SetupVulkan(SDL_Window* window)
+void Renderer::SetupInstanceLayers()
 {
-	validation = Config::GetBool("vulkan.instance.validation");
-
-    VkResult err;
-
 	// Get available instance layers layers
-
+	std::vector<VkLayerProperties> availableInstanceLayers;
     uint32_t numAvailableInstanceLayers;
+
     vkEnumerateInstanceLayerProperties(&numAvailableInstanceLayers, nullptr);
     availableInstanceLayers.resize(numAvailableInstanceLayers);
     vkEnumerateInstanceLayerProperties(&numAvailableInstanceLayers, &availableInstanceLayers[0]);
 
 	if(Config::GetBool("vulkan.instance.loginfo.layers"))
 	{
+		LOGINFO("Vulkan::Available instance layers...");
 		for(auto layerinfo : availableInstanceLayers)
 		{
-			LOGINFOF("Vulkan::available instance layer:%s", layerinfo.layerName);
+			LOGINFOF("   %s", layerinfo.layerName);
 		}
 	}
 
-	// Get extensions required by SDL and add them to the required list
-
-    uint32_t sdlExtensionsCount = 0;
-    SDL_Vulkan_GetInstanceExtensions(window, &sdlExtensionsCount, NULL);
-    const char** sdlExtensions = new const char*[sdlExtensionsCount];
-    SDL_Vulkan_GetInstanceExtensions(window, &sdlExtensionsCount, sdlExtensions);
-	for(int iExtension = 0 ; iExtension < sdlExtensionsCount ; ++iExtension)
-	{
-		requiredExtensions.push_back(sdlExtensions[iExtension]);
-	}
-	delete [] sdlExtensions;
-
-	requiredExtensions.push_back("VK_EXT_debug_report");
-
-    // Create Vulkan Instance
-	VkApplicationInfo applicationInfo;
-    applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    applicationInfo.pNext = NULL;
-    applicationInfo.pApplicationName = "Prometheus";
-    applicationInfo.applicationVersion = 1;
-    applicationInfo.pEngineName = "Prometheus";
-    applicationInfo.engineVersion = 1;
-    applicationInfo.apiVersion = VK_API_VERSION_1_0;
-
-    VkInstanceCreateInfo createInfo;
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	createInfo.pNext = nullptr;
-	createInfo.flags = 0;
-	createInfo.pApplicationInfo = &applicationInfo;
-
-    createInfo.enabledExtensionCount = requiredExtensions.size();
-    createInfo.ppEnabledExtensionNames = requiredExtensions.data();
-
-	// layers
 	if(validation)
 	{
 		requiredInstanceLayers.push_back("VK_LAYER_KHRONOS_validation");
 	}
 
-    createInfo.enabledLayerCount = requiredInstanceLayers.size();
-    createInfo.ppEnabledLayerNames = requiredInstanceLayers.data();
+	// Check that all required layers are available
+	for(auto requiredLayer : requiredInstanceLayers)
+	{
+		bool found = false;
+		for(auto availableLayer : availableInstanceLayers)
+		{
+			if(strcmp(requiredLayer, availableLayer.layerName) == 0)
+			{
+				found = true;
+			}
+		}
+		if(!found)
+		{
+			LOGERRORF("Vulkan::Required instance layer not available: %s", requiredLayer);
+		}
+	}
+}
 
-	// Create Vulkan Instance
-    err = vkCreateInstance(&createInfo, vkAllocatorCallbacks, &vkInstance);
-    CheckVkResult(err);
+void Renderer::SetupInstanceExtensions()
+{
+	if(Config::GetBool("vulkan.instance.loginfo.extensions"))
+	{
+		uint32_t numInstanceExtensions;
+		vkEnumerateInstanceExtensionProperties(nullptr, &numInstanceExtensions, nullptr);
+		std::vector<VkExtensionProperties> instanceExtensionProperties(numInstanceExtensions);
+		vkEnumerateInstanceExtensionProperties(nullptr, &numInstanceExtensions, instanceExtensionProperties.data());
+		LOGINFO("Vulkan::Available instance extensions...");
+		for(auto extension : instanceExtensionProperties)
+		{
+			LOGINFOF("   %s(%d)", extension.extensionName, extension.specVersion);
+		}
+	}
 
-        // Get the function pointer (required for any extensions)
+	// Get extensions required by SDL and add them to the required list
+    uint32_t sdlExtensionsCount = 0;
+    SDL_Vulkan_GetInstanceExtensions(sdlWindow, &sdlExtensionsCount, NULL);
+//    const char** sdlExtensions = new const char*[sdlExtensionsCount];
+	std::vector<const char*> sdlExtensions(sdlExtensionsCount);
+//    SDL_Vulkan_GetInstanceExtensions(sdlWindow, &sdlExtensionsCount, sdlExtensions);
+    SDL_Vulkan_GetInstanceExtensions(sdlWindow, &sdlExtensionsCount, sdlExtensions.data());
+	for(int iExtension = 0 ; iExtension < sdlExtensionsCount ; ++iExtension)
+	{
+		requiredInstanceExtensions.push_back(sdlExtensions[iExtension]);
+	}
+//	delete [] sdlExtensions;
+
+
+	if(validation)
+	{
+		requiredInstanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+	}
+
+	//TODO: Check all required extensions are in fact available
+}
+
+void Renderer::SetupDebugReportCallback()
+{
+    // Get the function pointer (required for any extensions)
     auto vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(Renderer::vkInstance, "vkCreateDebugReportCallbackEXT");
-    IM_ASSERT(vkCreateDebugReportCallbackEXT != NULL);
+    assert(vkCreateDebugReportCallbackEXT != NULL);
 
     // Setup the debug report callback
     VkDebugReportCallbackCreateInfoEXT debug_report_ci = {};
@@ -400,78 +399,135 @@ void Renderer::SetupVulkan(SDL_Window* window)
     debug_report_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
     debug_report_ci.pfnCallback = debug_report;
     debug_report_ci.pUserData = NULL;
-    err = vkCreateDebugReportCallbackEXT(vkInstance, &debug_report_ci, vkAllocatorCallbacks, &vkDebugReport);
+	VkResult err = vkCreateDebugReportCallbackEXT(vkInstance, &debug_report_ci, vkAllocatorCallbacks, &vkDebugReport);
+    CheckVkResult(err);
+}
+
+void Renderer::SetupPhysicalDevice()
+{
+	uint32_t deviceCount;
+	VkResult err = vkEnumeratePhysicalDevices(vkInstance, &deviceCount, NULL);
+	CheckVkResult(err);
+	assert(deviceCount > 0);
+
+	std::vector<VkPhysicalDevice> physicalDevices(deviceCount); 
+	err = vkEnumeratePhysicalDevices(vkInstance, &deviceCount, physicalDevices.data());
+	CheckVkResult(err);
+
+	int selectedDevice = 0;
+	for (int i = 0; i < (int)deviceCount; i++)
+	{
+		VkPhysicalDeviceProperties properties;
+		vkGetPhysicalDeviceProperties(physicalDevices[i], &properties);
+
+		// Issue:#7 Log properties if enabled
+
+		// Issue:#6 Proper choose cirteria
+		if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+		{
+			selectedDevice = i;
+			break;
+		}
+	}
+
+	vkPhysicalDevice = physicalDevices[selectedDevice];
+}
+
+void Renderer::SetupQueueFamilies()
+{
+	uint32_t count;
+	vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &count, NULL);
+	std::vector<VkQueueFamilyProperties> queues(count);
+	vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &count, queues.data());
+
+	// Issue:#16 Enumerate device queue family properties
+
+	for (uint32_t i = 0; i < count; i++)
+	{
+		if (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			vkQueueGraphicsFamily = i;
+			break;
+		}
+	}
+	assert(vkQueueGraphicsFamily != (uint32_t)-1);
+}
+
+void Renderer::SetupLogicalDevice()
+{
+	int device_extension_count = 1;
+	const char* device_extensions[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	const float queue_priority[] = { 1.0f };
+
+	std::vector<VkDeviceQueueCreateInfo> requestedQueueInfo;
+
+	VkDeviceQueueCreateInfo graphicsQueueInfo = {};
+	graphicsQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	graphicsQueueInfo.queueFamilyIndex = vkQueueGraphicsFamily;
+	graphicsQueueInfo.queueCount = 1;
+	graphicsQueueInfo.pQueuePriorities = queue_priority;
+	requestedQueueInfo.push_back(graphicsQueueInfo);
+
+	VkDeviceCreateInfo create_info = {};
+	create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	create_info.queueCreateInfoCount = requestedQueueInfo.size();
+	create_info.pQueueCreateInfos = requestedQueueInfo.data();
+	create_info.enabledExtensionCount = device_extension_count;
+	create_info.ppEnabledExtensionNames = device_extensions;
+	VkResult err = vkCreateDevice(vkPhysicalDevice, &create_info, vkAllocatorCallbacks, &vkDevice);
+	CheckVkResult(err);
+
+	vkGetDeviceQueue(vkDevice, vkQueueGraphicsFamily, 0, &vkGraphicsQueue);
+}
+
+void Renderer::Setup()
+{
+	validation = Config::GetBool("vulkan.instance.validation");
+
+    VkResult err;
+
+	// Log Vulkan Instance version
+	uint32_t instanceVersion;
+	err = vkEnumerateInstanceVersion(&instanceVersion);
+	CheckVkResult(err);
+	LOGINFOF("Vulkan Instance Version %d.%d.%d.%d", VK_API_VERSION_VARIANT(instanceVersion), VK_API_VERSION_MAJOR(instanceVersion), VK_API_VERSION_MINOR(instanceVersion), VK_API_VERSION_PATCH(instanceVersion));
+
+	SetupInstanceLayers();
+	SetupInstanceExtensions();
+
+    // Create Vulkan Instance
+	VkApplicationInfo applicationInfo = {};
+    applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    applicationInfo.pNext = NULL;
+    applicationInfo.pApplicationName = Config::GetString("application.name").c_str();
+    applicationInfo.applicationVersion = 1;
+    applicationInfo.pEngineName = "Prometheus";
+    applicationInfo.engineVersion = 1;
+    applicationInfo.apiVersion = VK_API_VERSION_1_3;
+
+    VkInstanceCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	createInfo.pNext = nullptr;
+	createInfo.flags = 0;
+	createInfo.pApplicationInfo = &applicationInfo;
+    createInfo.enabledExtensionCount = requiredInstanceExtensions.size();
+    createInfo.ppEnabledExtensionNames = requiredInstanceExtensions.data();
+    createInfo.enabledLayerCount = requiredInstanceLayers.size();
+    createInfo.ppEnabledLayerNames = requiredInstanceLayers.data();
+
+	// Create Vulkan Instance
+    err = vkCreateInstance(&createInfo, vkAllocatorCallbacks, &vkInstance);
     CheckVkResult(err);
 
-//    delete[] extensions;
+	if(validation)
+	{
+		SetupDebugReportCallback();
+	}
 
-    // Select GPU
-    {
-        uint32_t gpu_count;
-        err = vkEnumeratePhysicalDevices(vkInstance, &gpu_count, NULL);
-        CheckVkResult(err);
-        IM_ASSERT(gpu_count > 0);
-
-        VkPhysicalDevice* gpus = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * gpu_count);
-        err = vkEnumeratePhysicalDevices(vkInstance, &gpu_count, gpus);
-        CheckVkResult(err);
-
-        // If a number >1 of GPUs got reported, find discrete GPU if present, or use first one available. This covers
-        // most common cases (multi-gpu/integrated+dedicated graphics). Handling more complicated setups (multiple
-        // dedicated GPUs) is out of scope of this sample.
-        int use_gpu = 0;
-        for (int i = 0; i < (int)gpu_count; i++)
-        {
-            VkPhysicalDeviceProperties properties;
-            vkGetPhysicalDeviceProperties(gpus[i], &properties);
-            if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-            {
-                use_gpu = i;
-                break;
-            }
-        }
-
-        vkPhysicalDevice = gpus[use_gpu];
-        free(gpus);
-    }
-
-    // Select graphics queue family
-    {
-        uint32_t count;
-        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &count, NULL);
-        VkQueueFamilyProperties* queues = (VkQueueFamilyProperties*)malloc(sizeof(VkQueueFamilyProperties) * count);
-        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &count, queues);
-        for (uint32_t i = 0; i < count; i++)
-            if (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            {
-                vkQueueFamily = i;
-                break;
-            }
-        free(queues);
-        IM_ASSERT(vkQueueFamily != (uint32_t)-1);
-    }
-
-    // Create Logical Device (with 1 queue)
-    {
-        int device_extension_count = 1;
-        const char* device_extensions[] = { "VK_KHR_swapchain" };
-        const float queue_priority[] = { 1.0f };
-        VkDeviceQueueCreateInfo queue_info[1] = {};
-        queue_info[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queue_info[0].queueFamilyIndex = vkQueueFamily;
-        queue_info[0].queueCount = 1;
-        queue_info[0].pQueuePriorities = queue_priority;
-        VkDeviceCreateInfo create_info = {};
-        create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        create_info.queueCreateInfoCount = sizeof(queue_info) / sizeof(queue_info[0]);
-        create_info.pQueueCreateInfos = queue_info;
-        create_info.enabledExtensionCount = device_extension_count;
-        create_info.ppEnabledExtensionNames = device_extensions;
-        err = vkCreateDevice(vkPhysicalDevice, &create_info, vkAllocatorCallbacks, &vkDevice);
-        CheckVkResult(err);
-        vkGetDeviceQueue(vkDevice, vkQueueFamily, 0, &vkQueue);
-    }
-
+	SetupPhysicalDevice();
+	SetupQueueFamilies();
+	SetupLogicalDevice();
+	
     // Create Descriptor Pool
     {
         VkDescriptorPoolSize pool_sizes[] =
@@ -501,13 +557,14 @@ void Renderer::SetupVulkan(SDL_Window* window)
 
 // All the ImGui_ImplVulkanH_XXX structures/functions are optional helpers used by the demo.
 // Your real engine/app may not use them.
-void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surface, int width, int height)
+void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* _imguiWindow, VkSurfaceKHR surface, int width, int height)
 {
-    wd->Surface = surface;
+	imguiWindow = _imguiWindow;
+    imguiWindow->Surface = surface;
 
     // Check for WSI support
     VkBool32 res;
-    vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, vkQueueFamily, wd->Surface, &res);
+    vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, vkQueueGraphicsFamily, imguiWindow->Surface, &res);
     if (res != VK_TRUE)
     {
         fprintf(stderr, "Error no WSI support on physical device 0\n");
@@ -517,7 +574,7 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surf
     // Select Surface Format
     const VkFormat requestSurfaceImageFormat[] = { VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_R8G8B8_UNORM };
     const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-    wd->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(vkPhysicalDevice, wd->Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
+    imguiWindow->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(vkPhysicalDevice, imguiWindow->Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
 
     // Select Present Mode
 #ifdef IMGUI_UNLIMITED_FRAME_RATE
@@ -525,12 +582,12 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surf
 #else
     VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_FIFO_KHR };
 #endif
-    wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(vkPhysicalDevice, wd->Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
+    imguiWindow->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(vkPhysicalDevice, imguiWindow->Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
     //printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
 
     // Create SwapChain, RenderPass, Framebuffer, etc.
-    IM_ASSERT(minImageCount >= 2);
-    ImGui_ImplVulkanH_CreateOrResizeWindow(vkInstance, vkPhysicalDevice, vkDevice, wd, vkQueueFamily, vkAllocatorCallbacks, width, height, minImageCount);
+    assert(minImageCount >= 2);
+    ImGui_ImplVulkanH_CreateOrResizeWindow(vkInstance, vkPhysicalDevice, vkDevice, imguiWindow, vkQueueGraphicsFamily, vkAllocatorCallbacks, width, height, minImageCount);
 }
 
 void Renderer::CleanupVulkan()
@@ -550,17 +607,17 @@ void Renderer::CleanupVulkanWindow()
     ImGui_ImplVulkanH_DestroyWindow(vkInstance, vkDevice, &mainWindowData, vkAllocatorCallbacks);
 }
 
-void Renderer::BeginFrame(SDL_Window* window)
+void Renderer::BeginFrame()
 {
 	// Resize swap chain?
 	if (swapChainRebuild)
 	{
 		int width, height;
-		SDL_GetWindowSize(window, &width, &height);
+		SDL_GetWindowSize(sdlWindow, &width, &height);
 		if (width > 0 && height > 0)
 		{
 			ImGui_ImplVulkan_SetMinImageCount(minImageCount);
-			ImGui_ImplVulkanH_CreateOrResizeWindow(vkInstance, vkPhysicalDevice, vkDevice, &mainWindowData, vkQueueFamily, vkAllocatorCallbacks, width, height, minImageCount);
+			ImGui_ImplVulkanH_CreateOrResizeWindow(vkInstance, vkPhysicalDevice, vkDevice, &mainWindowData, vkQueueGraphicsFamily, vkAllocatorCallbacks, width, height, minImageCount);
 			mainWindowData.FrameIndex = 0;
 			swapChainRebuild = false;
 		}
@@ -572,13 +629,13 @@ void Renderer::BeginFrame(SDL_Window* window)
 }
 
 
-void Renderer::FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
+void Renderer::FrameRender(ImDrawData* draw_data)
 {
     VkResult err;
 
-    VkSemaphore image_acquired_semaphore  = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
-    VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
-    err = vkAcquireNextImageKHR(vkDevice, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
+    VkSemaphore image_acquired_semaphore  = imguiWindow->FrameSemaphores[imguiWindow->SemaphoreIndex].ImageAcquiredSemaphore;
+    VkSemaphore render_complete_semaphore = imguiWindow->FrameSemaphores[imguiWindow->SemaphoreIndex].RenderCompleteSemaphore;
+    err = vkAcquireNextImageKHR(vkDevice, imguiWindow->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &imguiWindow->FrameIndex);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
     {
         swapChainRebuild = true;
@@ -586,7 +643,7 @@ void Renderer::FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
     }
     CheckVkResult(err);
 
-    ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
+    ImGui_ImplVulkanH_Frame* fd = &imguiWindow->Frames[imguiWindow->FrameIndex];
     {
         err = vkWaitForFences(vkDevice, 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
         CheckVkResult(err);
@@ -606,12 +663,12 @@ void Renderer::FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
     {
         VkRenderPassBeginInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        info.renderPass = wd->RenderPass;
+        info.renderPass = imguiWindow->RenderPass;
         info.framebuffer = fd->Framebuffer;
-        info.renderArea.extent.width = wd->Width;
-        info.renderArea.extent.height = wd->Height;
+        info.renderArea.extent.width = imguiWindow->Width;
+        info.renderArea.extent.height = imguiWindow->Height;
         info.clearValueCount = 1;
-        info.pClearValues = &wd->ClearValue;
+        info.pClearValues = &imguiWindow->ClearValue;
         vkCmdBeginRenderPass(fd->CommandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
     }
 
@@ -634,31 +691,31 @@ void Renderer::FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 
         err = vkEndCommandBuffer(fd->CommandBuffer);
         CheckVkResult(err);
-        err = vkQueueSubmit(vkQueue, 1, &info, fd->Fence);
+        err = vkQueueSubmit(vkGraphicsQueue, 1, &info, fd->Fence);
         CheckVkResult(err);
     }
 }
 
-void Renderer::FramePresent(ImGui_ImplVulkanH_Window* wd)
+void Renderer::FramePresent()
 {
     if (swapChainRebuild)
         return;
-    VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
+    VkSemaphore render_complete_semaphore = imguiWindow->FrameSemaphores[imguiWindow->SemaphoreIndex].RenderCompleteSemaphore;
     VkPresentInfoKHR info = {};
     info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     info.waitSemaphoreCount = 1;
     info.pWaitSemaphores = &render_complete_semaphore;
     info.swapchainCount = 1;
-    info.pSwapchains = &wd->Swapchain;
-    info.pImageIndices = &wd->FrameIndex;
-    VkResult err = vkQueuePresentKHR(vkQueue, &info);
+    info.pSwapchains = &imguiWindow->Swapchain;
+    info.pImageIndices = &imguiWindow->FrameIndex;
+    VkResult err = vkQueuePresentKHR(vkGraphicsQueue, &info);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
     {
         swapChainRebuild = true;
         return;
     }
     CheckVkResult(err);
-    wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->ImageCount; // Now we can use the next set of semaphores
+    imguiWindow->SemaphoreIndex = (imguiWindow->SemaphoreIndex + 1) % imguiWindow->ImageCount; // Now we can use the next set of semaphores
 }
 
 #if 0
@@ -829,56 +886,6 @@ EError Renderer::Init()
 	}
 
     return EError::OK;
-}
-#endif
-
-#if 0
-EError Renderer::Shutdown()
-{
-    vkDestroySurfaceKHR(instance, surface, NULL);
-    SDL_DestroyWindow(pSdlWindow);
-    SDL_Quit();
-    vkDestroyInstance(instance, NULL);
-
-    return EError::OK;
-}
-#endif
-
-#if 0
-void Renderer::LogInstanceProperties()
-{
-    LOGINFO("=== Vulkan instance info ===");
-    LOGINFO("");
-    LOGINFO("--- Application info ---");
-    LOGINFO("");
-    LOGINFOF("Application name:%s", applicationInfo.pApplicationName);
-    LOGINFOF("Application version %d", applicationInfo.applicationVersion);
-    LOGINFOF("Engine name:%s", applicationInfo.pEngineName);
-    LOGINFOF("Engine version:%d", applicationInfo.engineVersion);
-    LOGINFOF("API version:%s", StringAPIVersion(applicationInfo.apiVersion).c_str());
-    LOGINFOF("Num physical devices:%d", physicalDevices.size());
-
-    if(Config::Instance()->GetBool("vulkan.instance.loginfo.extensions", true))
-    {
-        LOGINFO("");
-        LOGINFO("--- Supported extensions ---");
-        LOGINFO("");
-        for(int iExtension=0 ; iExtension<availableExtensions.size() ; iExtension++)
-        {
-            LOGINFOF("Extension: %s spec: %d", availableExtensions[iExtension].extensionName, availableExtensions[iExtension].specVersion);
-        }
-    }
-
-    if(Config::Instance()->GetBool("vulkan.instance.loginfo.extensions", true))
-    {
-        LOGINFO("");
-        LOGINFO("--- Supported layers ---");
-        LOGINFO("");
-        for(int iLayer=0 ; iLayer<availableLayers.size() ; iLayer++)
-        {
-            LOGINFOF("Layer: %s spec: %d", availableLayers[iLayer].layerName, availableLayers[iLayer].specVersion);
-        }
-    }
 }
 #endif
 
