@@ -9,7 +9,7 @@ set(CMAKE_C_FLAGS "-DVK_ENABLE_BETA_EXTENSIONS -D_DEBUG")
 set(CMAKE_CXX_FLAGS "-DVK_ENABLE_BETA_EXTENSIONS -D_DEBUG")
 
 set(SOURCE_FILES main.cpp)
-set(IMGUI_PATH "3rdparty/imgui-1.89.3")
+set(IMGUI_PATH "3rdparty/imgui-1.89.2")
 
 add_subdirectory(${IMGUI_PATH})
 add_subdirectory("system")
