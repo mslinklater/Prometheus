@@ -5,12 +5,10 @@
 class RendererLogicalDevice
 {
 public:
-	RendererLogicalDevice(VkPhysicalDevice device);
+	RendererLogicalDevice(VkDevice device);
 	virtual ~RendererLogicalDevice(){}
 
+	VkDevice GetVkDevice(){return device;}
 private:
-	VkPhysicalDevice physicalDevice;
 	VkDevice device;
-	VkDeviceCreateInfo createInfo;
-//	VkAllocationCallbacks allocationCallbacks;
 };

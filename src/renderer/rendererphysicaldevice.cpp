@@ -3,7 +3,7 @@
 #include "system/config.h"
 #include "vulkan/vk_layer_utils.h"
 
-void RendererPhysicalDevice::SetPhysicalDevice(VkPhysicalDevice deviceIn)
+void RendererPhysicalDevice::SetVkPhysicalDevice(VkPhysicalDevice deviceIn)
 {
 	device = deviceIn;
 	acceptable = true;
@@ -299,4 +299,9 @@ void RendererPhysicalDevice::LogDeviceInfo()
 			LOGINFO("");
 		}
 	}
+}
+
+bool RendererPhysicalDevice::IsDiscreetGPU()
+{
+	return properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 }

@@ -7,8 +7,11 @@
 
 #include "vulkan/vk_layer_utils.h"
 
+#include "rendererphysicaldevice.h"
 #include "rendererlogicaldevice.h"
 #include "renderer.h"
+#include "rendererutils.h"
+
 #include "system/config.h"
 #include "system/log.h"
 
@@ -39,7 +42,8 @@ Renderer::Renderer()
 {
 	vkAllocatorCallbacks = NULL;
 	vkInstance = VK_NULL_HANDLE;
-	vkPhysicalDevice = VK_NULL_HANDLE;
+	physicalDevice = nullptr;
+	device = nullptr;
 	vkDevice = VK_NULL_HANDLE;
 	vkQueueGraphicsFamily = (uint32_t)-1;
 	vkGraphicsQueue = VK_NULL_HANDLE;
@@ -54,170 +58,6 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {}
-
-#if 0
-EError Renderer::SdlInit()
-{
-    assert(!sdlInitialised);
-    LOGINFO("Renderer::SdlInit()");
-
-    // Create an SDL window that supports Vulkan rendering.
-    if (SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
-    {
-        return ErrorLogAndReturn(EError::SDL_UnableToInitialize);
-    }
-
-    sdlWindowFlags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-
-    pSdlWindow = SDL_CreateWindow("Prometheus", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, sdlWindowFlags);
-
-    if (pSdlWindow == NULL)
-    {
-        return ErrorLogAndReturn(EError::SDL_CouldNotCreateWindow);
-    }
-
-    // Get WSI extensions from SDL (we can add more if we like - we just can't
-    // remove these)
-    unsigned extensionCount;
-    if (!SDL_Vulkan_GetInstanceExtensions(pSdlWindow, &extensionCount, NULL))
-    {
-        return ErrorLogAndReturn(EError::SDL_CouldNotGetRequiredVulkanExtensions);
-    }
-
-    std::vector<const char*> sdlExtensions;
-    sdlExtensions.resize(extensionCount);
-
-    if (!SDL_Vulkan_GetInstanceExtensions(pSdlWindow, &extensionCount, sdlExtensions.data()))
-    {
-        return ErrorLogAndReturn(EError::SDL_CouldNotGetRequiredVulkanExtensions);
-    }
-
-    // copy sdl extensions to required extensions
-
-    for(auto ext : sdlExtensions)
-        requiredExtensions.push_back(ext);
-
-    sdlInitialised = true;
-	return EError::OK;
-}
-#endif
-
-#if 0
-void Renderer::EnableValidation()
-{
-	const std::vector<const char*> requiredLayers = {
-		"VK_LAYER_KHRONOS_validation"
-	};
-
-	for(auto requiredLayer : requiredLayers)
-	{
-		bool supportsLayer = false;
-		for(auto layerProperties : availableLayers)
-		{
-			if(strcmp(layerProperties.layerName, requiredLayer) == 0)
-			{
-				supportsLayer = true;
-			}
-		}
-
-		if(supportsLayer)
-		{
-			enabledLayers.push_back(requiredLayer);
-		}
-		else
-		{
-			LOGFATALF("Vulkan::Does not support required %s layer", requiredLayer);
-		}
-	}
-}
-#endif
-
-#if 0
-void Renderer::GetRequiredAndOptionalExtensions()
-{
-	// TODO: Move the SDL extension injection to here
-
-	// if validation is enabled we need to add the message callback extension
-	if(validation)
-	{
-		optionalExtensions.push_back("VK_EXT_DEBUG_UTILS_EXTENSION_NAME");
-	}
-}
-#endif
-
-#if 0
-bool Renderer::CheckRequiredExtensions()
-{
-	// go through required extensions and check they exist in the available extensions list
-	for(auto requiredExt : requiredExtensions)
-	{
-		bool thisOneAvailable = false;
-		for(auto availableExt : availableExtensions)
-		{
-			if(strcmp(availableExt.extensionName, requiredExt) == 0)
-			{
-				thisOneAvailable = true;
-			}
-		}
-		if(!thisOneAvailable)
-		{
-			// report the error and bail
-			LOGFATALF("Vulkan::Required extension is not available: %s", requiredExt);
-			return false;
-		}
-	}
-
-	// now go through optional extensions and try to survive if they are not available
-	std::vector<std::string> removeFromOptional;
-	for(auto optionalExt : optionalExtensions)
-	{
-		bool thisOneAvailable = false;
-		for(auto availableExt : availableExtensions)
-		{
-			if(strcmp(availableExt.extensionName, optionalExt) == 0)
-			{
-				thisOneAvailable = true;
-			}
-		}
-		if(!thisOneAvailable)
-		{
-			if(strcmp(optionalExt, "VK_EXT_DEBUG_UTILS_EXTENSION_NAME") == 0)
-			{
-				// turn off validation
-				LOGWARNING("Vulkan::Validation extension not available - disabling validation. (VK_EXT_DEBUG_UTILS_EXTENSION_NAME)");
-				validation = false;
-			}
-			else
-			{
-				LOGWARNINGF("Vulkan::Extension not available %s", optionalExt);
-			}
-			removeFromOptional.push_back(optionalExt);
-		}
-	}
-	// remove any unavailable optional extensions
-	for(std::vector<std::string>::iterator rem = removeFromOptional.begin() ; rem != removeFromOptional.end() ; ++rem)
-	{
-		for(std::vector<const char*>::iterator iter = optionalExtensions.begin() ; iter != optionalExtensions.end() ; ++iter)
-		{
-			if(strcmp(*iter, (*rem).c_str()) == 0)
-			{
-				optionalExtensions.erase(iter);
-				break;
-			}
-		}
-	}
-	// copy required and remaining optional extensions to the requested extensions list
-	for(auto required : requiredExtensions)
-	{
-		requestedExtensions.push_back(required);
-	}
-	for(auto optional : optionalExtensions)
-	{
-		requestedExtensions.push_back(optional);
-	}
-	return true;
-}
-#endif
 
 void Renderer::Initialise(SDL_Window* window)
 {
@@ -254,7 +94,7 @@ void Renderer::Initialise(SDL_Window* window)
     ImGui_ImplSDL2_InitForVulkan(window);
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = vkInstance;
-    init_info.PhysicalDevice = vkPhysicalDevice;
+    init_info.PhysicalDevice = physicalDevice->GetVkPhysicalDevice();
     init_info.Device = vkDevice;
     init_info.QueueFamily = vkQueueGraphicsFamily;
     init_info.Queue = vkGraphicsQueue;
@@ -410,47 +250,32 @@ void Renderer::SetupPhysicalDevice()
 	CheckVkResult(err);
 	assert(deviceCount > 0);
 
-	std::vector<VkPhysicalDevice> physicalDevices(deviceCount); 
-	err = vkEnumeratePhysicalDevices(vkInstance, &deviceCount, physicalDevices.data());
+	std::vector<VkPhysicalDevice> physicalDeviceHandles(deviceCount); 
+	err = vkEnumeratePhysicalDevices(vkInstance, &deviceCount, physicalDeviceHandles.data());
 	CheckVkResult(err);
 
 	int selectedDevice = 0;
 	for (int i = 0; i < (int)deviceCount; i++)
 	{
-		VkPhysicalDeviceProperties properties;
-		vkGetPhysicalDeviceProperties(physicalDevices[i], &properties);
-
-		// Issue:#7 Log properties if enabled
+		// add to physicalDevices vector
+		RendererPhysicalDevice* physicalDevice = new RendererPhysicalDevice();
+		physicalDevices.push_back(physicalDevice);
+		physicalDevice->SetVkPhysicalDevice(physicalDeviceHandles[i]);
 
 		// Issue:#6 Proper choose cirteria
-		if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+		if (physicalDevice->IsDiscreetGPU())
 		{
 			selectedDevice = i;
 			break;
 		}
 	}
 
-	vkPhysicalDevice = physicalDevices[selectedDevice];
+	physicalDevice = physicalDevices[selectedDevice];
 }
 
 void Renderer::SetupQueueFamilies()
 {
-	uint32_t count;
-	vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &count, NULL);
-	std::vector<VkQueueFamilyProperties> queues(count);
-	vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &count, queues.data());
-
-	// Issue:#16 Enumerate device queue family properties
-
-	for (uint32_t i = 0; i < count; i++)
-	{
-		if (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-		{
-			vkQueueGraphicsFamily = i;
-			break;
-		}
-	}
-	assert(vkQueueGraphicsFamily != (uint32_t)-1);
+	vkQueueGraphicsFamily = physicalDevice->GetGraphicsQueueFamilyIndex();
 }
 
 void Renderer::SetupLogicalDevice()
@@ -460,7 +285,6 @@ void Renderer::SetupLogicalDevice()
 	const float queue_priority[] = { 1.0f };
 
 	std::vector<VkDeviceQueueCreateInfo> requestedQueueInfo;
-
 
 	VkDeviceQueueCreateInfo graphicsQueueInfo = {};
 	graphicsQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -477,8 +301,10 @@ void Renderer::SetupLogicalDevice()
 	create_info.pQueueCreateInfos = requestedQueueInfo.data();
 	create_info.enabledExtensionCount = device_extension_count;
 	create_info.ppEnabledExtensionNames = device_extensions;
-	VkResult err = vkCreateDevice(vkPhysicalDevice, &create_info, vkAllocatorCallbacks, &vkDevice);
+	VkResult err = vkCreateDevice(physicalDevice->GetVkPhysicalDevice(), &create_info, vkAllocatorCallbacks, &vkDevice);
 	CheckVkResult(err);
+	
+	device = new RendererLogicalDevice(vkDevice);
 
 	vkGetDeviceQueue(vkDevice, vkQueueGraphicsFamily, 0, &vkGraphicsQueue);
 }
@@ -570,33 +396,38 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* _imguiWindow, VkSurfa
 
     // Check for WSI support
     VkBool32 res;
-    vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, vkQueueGraphicsFamily, imguiWindow->Surface, &res);
+    vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice->GetVkPhysicalDevice(), vkQueueGraphicsFamily, imguiWindow->Surface, &res);
     if (res != VK_TRUE)
     {
         fprintf(stderr, "Error no WSI support on physical device 0\n");
         exit(-1);
     }
 
-    // Select Surface Format
-    const VkFormat requestSurfaceImageFormat[] = {	VK_FORMAT_B8G8R8A8_UNORM, 
-													VK_FORMAT_R8G8B8A8_UNORM, 
-													VK_FORMAT_B8G8R8_UNORM, 
-													VK_FORMAT_R8G8B8_UNORM };
-    const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-    imguiWindow->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(vkPhysicalDevice, imguiWindow->Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
+	std::vector<VkFormat> requestSurfaceImageFormats = {
+		VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_R8G8B8_UNORM
+	};
+
+	imguiWindow->SurfaceFormat = RendererUtils::FindBestSurfaceFormat(
+		physicalDevice->GetVkPhysicalDevice(),
+		requestSurfaceImageFormats, 
+		VK_COLORSPACE_SRGB_NONLINEAR_KHR,
+		imguiWindow->Surface);
 
     // Select Present Mode
-#ifdef IMGUI_UNLIMITED_FRAME_RATE
-    VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_FIFO_KHR };
+#if 0
+	// go as fast as you can
+	std::vector<VkPresentModeKHR> presentModes = { VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_FIFO_KHR };
 #else
-    VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_FIFO_KHR };
+	std::vector<VkPresentModeKHR> presentModes = { VK_PRESENT_MODE_FIFO_KHR };
 #endif
-    imguiWindow->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(vkPhysicalDevice, imguiWindow->Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
-    //printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
+
+    imguiWindow->PresentMode = RendererUtils::FindBestPresentMode(physicalDevice->GetVkPhysicalDevice(), imguiWindow->Surface, presentModes);
 
     // Create SwapChain, RenderPass, Framebuffer, etc.
     assert(minImageCount >= 2);
-    ImGui_ImplVulkanH_CreateOrResizeWindow(vkInstance, vkPhysicalDevice, vkDevice, imguiWindow, vkQueueGraphicsFamily, vkAllocatorCallbacks, width, height, minImageCount);
+
+	// TODO: break this up too...
+    ImGui_ImplVulkanH_CreateOrResizeWindow(vkInstance, physicalDevice->GetVkPhysicalDevice(), vkDevice, imguiWindow, vkQueueGraphicsFamily, vkAllocatorCallbacks, width, height, minImageCount);
 }
 
 void Renderer::CleanupVulkan()
@@ -626,7 +457,7 @@ void Renderer::BeginFrame()
 		if (width > 0 && height > 0)
 		{
 			ImGui_ImplVulkan_SetMinImageCount(minImageCount);
-			ImGui_ImplVulkanH_CreateOrResizeWindow(vkInstance, vkPhysicalDevice, vkDevice, &imguiVulkanWindowData, vkQueueGraphicsFamily, vkAllocatorCallbacks, width, height, minImageCount);
+			ImGui_ImplVulkanH_CreateOrResizeWindow(vkInstance, physicalDevice->GetVkPhysicalDevice(), vkDevice, &imguiVulkanWindowData, vkQueueGraphicsFamily, vkAllocatorCallbacks, width, height, minImageCount);
 			imguiVulkanWindowData.FrameIndex = 0;
 			swapChainRebuild = false;
 		}

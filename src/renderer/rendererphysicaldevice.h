@@ -11,8 +11,8 @@ class RendererPhysicalDevice
     RendererPhysicalDevice() {}
     virtual ~RendererPhysicalDevice() {}
 
-    void SetPhysicalDevice(VkPhysicalDevice deviceIn);
-	  VkPhysicalDevice GetPhysicalDevice(){ return device; }
+    void SetVkPhysicalDevice(VkPhysicalDevice deviceIn);
+	VkPhysicalDevice GetVkPhysicalDevice(){ return device; }
 
     void LogDeviceName();
     void LogDeviceInfo();
@@ -20,11 +20,13 @@ class RendererPhysicalDevice
 	const std::string& GetName(){ return name; }
 
 	bool HasGraphicsQueue(){ return graphicsQueueIndex.has_value(); }
-    uint32_t GraphicsQueueIndex(){ return graphicsQueueIndex.value(); }
+    uint32_t GetGraphicsQueueFamilyIndex(){ return graphicsQueueIndex.value(); }
 	bool HasComputeQueue(){ return computeQueueIndex.has_value(); }
-    uint32_t ComputeQueueIndex(){ return computeQueueIndex.value(); }
+    uint32_t GetComputeQueueFamilyIndex(){ return computeQueueIndex.value(); }
 	bool HasTransferQueue(){ return transferQueueIndex.has_value(); }
-    uint32_t TransferQueueIndex(){ return transferQueueIndex.value(); }
+    uint32_t GetTransferQueueFamilyIndex(){ return transferQueueIndex.value(); }
+
+	bool IsDiscreetGPU();
 
 	bool acceptable;
 

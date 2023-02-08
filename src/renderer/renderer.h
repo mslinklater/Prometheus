@@ -22,10 +22,11 @@
 
 #include "system/errors.h"
 
-#include "rendererphysicaldevice.h"
+//#include "rendererphysicaldevice.h"
 
 class SDL_Window;
 class RendererLogicalDevice;
+class RendererPhysicalDevice;
 
 class Renderer
 {
@@ -45,7 +46,8 @@ public:
 
     VkAllocationCallbacks*   vkAllocatorCallbacks;
     VkInstance               vkInstance;
-    VkPhysicalDevice         vkPhysicalDevice;
+	RendererPhysicalDevice*		physicalDevice;
+	RendererLogicalDevice* 		device;
     VkDevice                 vkDevice;
     uint32_t                 vkQueueGraphicsFamily;
     VkQueue                  vkGraphicsQueue;
@@ -54,6 +56,7 @@ public:
     VkDescriptorPool         vkDescriptorPool;
 
     ImGui_ImplVulkanH_Window imguiVulkanWindowData;
+	
     uint32_t                 minImageCount;
     bool                     swapChainRebuild;
 
@@ -82,6 +85,7 @@ public:
 
     // Main
 
+private:
     std::vector<const char*> requiredInstanceLayers;
     std::vector<const char*> requiredInstanceExtensions;
     std::vector<const char*> requiredDeviceExtensions;
@@ -96,4 +100,5 @@ private:
 	void SetupDescriptorPool();
 
 	SDL_Window* sdlWindow;
+	std::vector<RendererPhysicalDevice*> physicalDevices;
 };
