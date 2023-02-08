@@ -55,6 +55,10 @@ Renderer::Renderer()
 	minImageCount = 2;
 	swapChainRebuild = false;
 	validation = false;
+
+	windowImageCount = 0;
+	windowWidth = 0;
+	windowHeight = 0;
 }
 
 Renderer::~Renderer()
@@ -107,7 +111,8 @@ void Renderer::SetupImGui()
     init_info.DescriptorPool = vkDescriptorPool;
     init_info.Subpass = 0;
     init_info.MinImageCount = minImageCount;
-    init_info.ImageCount = imguiWindow->ImageCount;
+//    init_info.ImageCount = imguiWindow->ImageCount;
+    init_info.ImageCount = windowImageCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator = vkAllocatorCallbacks;
     init_info.CheckVkResultFn = Renderer::CheckVkResult;
@@ -392,15 +397,16 @@ void Renderer::Setup()
 	SetupDescriptorPool();
 }
 
-// TODO: Move
 void Renderer::SetupVulkanWindow(ImGui_Window* _imguiWindow, VkSurfaceKHR surface, int width, int height)
 {
 	imguiWindow = _imguiWindow;
-    imguiWindow->Surface = surface;
+//    imguiWindow->Surface = surface;
+    windowSurface = surface;
 
     // Check for WSI support
     VkBool32 res;
-    vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice->GetVkPhysicalDevice(), vkQueueGraphicsFamily, imguiWindow->Surface, &res);
+//    vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice->GetVkPhysicalDevice(), vkQueueGraphicsFamily, imguiWindow->Surface, &res);
+    vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice->GetVkPhysicalDevice(), vkQueueGraphicsFamily, windowSurface, &res);
     if (res != VK_TRUE)
     {
         fprintf(stderr, "Error no WSI support on physical device 0\n");
@@ -415,7 +421,8 @@ void Renderer::SetupVulkanWindow(ImGui_Window* _imguiWindow, VkSurfaceKHR surfac
 		physicalDevice->GetVkPhysicalDevice(),
 		requestSurfaceImageFormats, 
 		VK_COLORSPACE_SRGB_NONLINEAR_KHR,
-		imguiWindow->Surface);
+		windowSurface);
+//		imguiWindow->Surface);
 
     // Select Present Mode
 #if 0
@@ -425,7 +432,8 @@ void Renderer::SetupVulkanWindow(ImGui_Window* _imguiWindow, VkSurfaceKHR surfac
 	std::vector<VkPresentModeKHR> presentModes = { VK_PRESENT_MODE_FIFO_KHR };
 #endif
 
-    imguiWindow->PresentMode = RendererUtils::FindBestPresentMode(physicalDevice->GetVkPhysicalDevice(), imguiWindow->Surface, presentModes);
+//    imguiWindow->PresentMode = RendererUtils::FindBestPresentMode(physicalDevice->GetVkPhysicalDevice(), imguiWindow->Surface, presentModes);
+    imguiWindow->PresentMode = RendererUtils::FindBestPresentMode(physicalDevice->GetVkPhysicalDevice(), windowSurface, presentModes);
 
     // Create SwapChain, RenderPass, Framebuffer, etc.
     assert(minImageCount >= 2);
@@ -435,241 +443,262 @@ void Renderer::SetupVulkanWindow(ImGui_Window* _imguiWindow, VkSurfaceKHR surfac
 
 void Renderer::CreateOrResizeWindow(uint32_t width, uint32_t height)
 {
-	// START
+	VkResult err;
+//	VkSwapchainKHR old_swapchain = imguiWindow->Swapchain;
+	VkSwapchainKHR old_swapchain = swapchain;
+	swapchain = VK_NULL_HANDLE;
+//	imguiWindow->Swapchain = VK_NULL_HANDLE;
+	err = vkDeviceWaitIdle(vkDevice);
+	CheckVkResult(err);
+
+//	for (uint32_t iImage = 0; iImage < imguiWindow->ImageCount; iImage++)
+	for (uint32_t iImage = 0; iImage < windowImageCount; iImage++)
 	{
-		VkResult err;
-		VkSwapchainKHR old_swapchain = imguiWindow->Swapchain;
-		imguiWindow->Swapchain = VK_NULL_HANDLE;
-		err = vkDeviceWaitIdle(vkDevice);
+		ImGui_Frame* fd = &imguiWindow->Frames[iImage];
+		vkDestroyFence(vkDevice, fd->Fence, vkAllocatorCallbacks);
+		vkFreeCommandBuffers(vkDevice, fd->CommandPool, 1, &fd->CommandBuffer);
+		vkDestroyCommandPool(vkDevice, fd->CommandPool, vkAllocatorCallbacks);
+		fd->Fence = VK_NULL_HANDLE;
+		fd->CommandBuffer = VK_NULL_HANDLE;
+		fd->CommandPool = VK_NULL_HANDLE;
+
+		vkDestroyImageView(vkDevice, fd->BackbufferView, vkAllocatorCallbacks);
+		vkDestroyFramebuffer(vkDevice, fd->Framebuffer, vkAllocatorCallbacks);
+
+		ImGui_FrameSemaphores* fsd = &imguiWindow->FrameSemaphores[iImage];
+		vkDestroySemaphore(vkDevice, fsd->ImageAcquiredSemaphore, vkAllocatorCallbacks);
+		vkDestroySemaphore(vkDevice, fsd->RenderCompleteSemaphore, vkAllocatorCallbacks);
+		fsd->ImageAcquiredSemaphore = fsd->RenderCompleteSemaphore = VK_NULL_HANDLE;
+	}
+
+	free(imguiWindow->Frames);
+	free(imguiWindow->FrameSemaphores);
+
+	imguiWindow->Frames = nullptr;
+	imguiWindow->FrameSemaphores = nullptr;
+//	imguiWindow->ImageCount = 0;
+	windowImageCount = 0;
+	if (imguiWindow->RenderPass)
+		vkDestroyRenderPass(vkDevice, imguiWindow->RenderPass, vkAllocatorCallbacks);
+	if (imguiWindow->Pipeline)
+		vkDestroyPipeline(vkDevice, imguiWindow->Pipeline, vkAllocatorCallbacks);
+
+	// If min image count was not specified, request different count of images dependent on selected present mode
+	if (minImageCount == 0)
+	{
+		if (imguiWindow->PresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+			minImageCount = 3;
+		if (imguiWindow->PresentMode == VK_PRESENT_MODE_FIFO_KHR || imguiWindow->PresentMode == VK_PRESENT_MODE_FIFO_RELAXED_KHR)
+			minImageCount = 2;
+		if (imguiWindow->PresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
+			minImageCount = 1;
+	}
+
+	// Create Swapchain
+	{
+		VkSwapchainCreateInfoKHR info = {};
+		info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+//		info.surface = imguiWindow->Surface;
+		info.surface = windowSurface;
+		info.minImageCount = minImageCount;
+		info.imageFormat = imguiWindow->SurfaceFormat.format;
+		info.imageColorSpace = imguiWindow->SurfaceFormat.colorSpace;
+		info.imageArrayLayers = 1;
+		info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;           // Assume that graphics family == present family
+		info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+		info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		info.presentMode = imguiWindow->PresentMode;
+		info.clipped = VK_TRUE;
+		info.oldSwapchain = old_swapchain;
+		VkSurfaceCapabilitiesKHR cap;
+
+//		err = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice->GetVkPhysicalDevice(), imguiWindow->Surface, &cap);
+		err = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice->GetVkPhysicalDevice(), windowSurface, &cap);
 		CheckVkResult(err);
 
-		for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
+		if (info.minImageCount < cap.minImageCount)
+			info.minImageCount = cap.minImageCount;
+		else if (cap.maxImageCount != 0 && info.minImageCount > cap.maxImageCount)
+			info.minImageCount = cap.maxImageCount;
+
+		if (cap.currentExtent.width == 0xffffffff)
 		{
-			{
-				ImGui_Frame* fd = &imguiWindow->Frames[i];
-				vkDestroyFence(vkDevice, fd->Fence, vkAllocatorCallbacks);
-				vkFreeCommandBuffers(vkDevice, fd->CommandPool, 1, &fd->CommandBuffer);
-				vkDestroyCommandPool(vkDevice, fd->CommandPool, vkAllocatorCallbacks);
-				fd->Fence = VK_NULL_HANDLE;
-				fd->CommandBuffer = VK_NULL_HANDLE;
-				fd->CommandPool = VK_NULL_HANDLE;
-
-				vkDestroyImageView(vkDevice, fd->BackbufferView, vkAllocatorCallbacks);
-				vkDestroyFramebuffer(vkDevice, fd->Framebuffer, vkAllocatorCallbacks);
-			}
-			{
-				ImGui_FrameSemaphores* fsd = &imguiWindow->FrameSemaphores[i];
-				vkDestroySemaphore(vkDevice, fsd->ImageAcquiredSemaphore, vkAllocatorCallbacks);
-				vkDestroySemaphore(vkDevice, fsd->RenderCompleteSemaphore, vkAllocatorCallbacks);
-				fsd->ImageAcquiredSemaphore = fsd->RenderCompleteSemaphore = VK_NULL_HANDLE;
-			}
+//			info.imageExtent.width = imguiWindow->Width = width;
+//			info.imageExtent.height = imguiWindow->Height = height;
+			info.imageExtent.width = windowWidth = width;
+			info.imageExtent.height = windowHeight = height;
 		}
-//		IM_FREE(imguiWindow->Frames);
-//		IM_FREE(imguiWindow->FrameSemaphores);
-		free(imguiWindow->Frames);
-		free(imguiWindow->FrameSemaphores);
-		imguiWindow->Frames = nullptr;
-		imguiWindow->FrameSemaphores = nullptr;
-		imguiWindow->ImageCount = 0;
-		if (imguiWindow->RenderPass)
-			vkDestroyRenderPass(vkDevice, imguiWindow->RenderPass, vkAllocatorCallbacks);
-		if (imguiWindow->Pipeline)
-			vkDestroyPipeline(vkDevice, imguiWindow->Pipeline, vkAllocatorCallbacks);
-
-		// If min image count was not specified, request different count of images dependent on selected present mode
-		if (minImageCount == 0)
+		else
 		{
-			if (imguiWindow->PresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-				minImageCount = 3;
-			if (imguiWindow->PresentMode == VK_PRESENT_MODE_FIFO_KHR || imguiWindow->PresentMode == VK_PRESENT_MODE_FIFO_RELAXED_KHR)
-				minImageCount = 2;
-			if (imguiWindow->PresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
-				minImageCount = 1;
+//			info.imageExtent.width = imguiWindow->Width = cap.currentExtent.width;
+//			info.imageExtent.height = imguiWindow->Height = cap.currentExtent.height;
+			info.imageExtent.width = windowWidth = cap.currentExtent.width;
+			info.imageExtent.height = windowHeight = cap.currentExtent.height;
 		}
+//		err = vkCreateSwapchainKHR(vkDevice, &info, vkAllocatorCallbacks, &imguiWindow->Swapchain);
+		err = vkCreateSwapchainKHR(vkDevice, &info, vkAllocatorCallbacks, &swapchain);
+		CheckVkResult(err);
+//		err = vkGetSwapchainImagesKHR(vkDevice, imguiWindow->Swapchain, &imguiWindow->ImageCount, nullptr);
+//		err = vkGetSwapchainImagesKHR(vkDevice, imguiWindow->Swapchain, &windowImageCount, nullptr);
+		err = vkGetSwapchainImagesKHR(vkDevice, swapchain, &windowImageCount, nullptr);
+		CheckVkResult(err);
 
-		// Create Swapchain
-		{
-			VkSwapchainCreateInfoKHR info = {};
-			info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-			info.surface = imguiWindow->Surface;
-			info.minImageCount = minImageCount;
-			info.imageFormat = imguiWindow->SurfaceFormat.format;
-			info.imageColorSpace = imguiWindow->SurfaceFormat.colorSpace;
-			info.imageArrayLayers = 1;
-			info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-			info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;           // Assume that graphics family == present family
-			info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-			info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-			info.presentMode = imguiWindow->PresentMode;
-			info.clipped = VK_TRUE;
-			info.oldSwapchain = old_swapchain;
-			VkSurfaceCapabilitiesKHR cap;
-			err = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice->GetVkPhysicalDevice(), imguiWindow->Surface, &cap);
-			CheckVkResult(err);
-			if (info.minImageCount < cap.minImageCount)
-				info.minImageCount = cap.minImageCount;
-			else if (cap.maxImageCount != 0 && info.minImageCount > cap.maxImageCount)
-				info.minImageCount = cap.maxImageCount;
+		VkImage backbuffers[16] = {};
+//		IM_ASSERT(imguiWindow->ImageCount >= minImageCount);
+//		IM_ASSERT(imguiWindow->ImageCount < IM_ARRAYSIZE(backbuffers));
+		IM_ASSERT(windowImageCount >= minImageCount);
+		IM_ASSERT(windowImageCount < IM_ARRAYSIZE(backbuffers));
+//		err = vkGetSwapchainImagesKHR(vkDevice, imguiWindow->Swapchain, &imguiWindow->ImageCount, backbuffers);
+//		err = vkGetSwapchainImagesKHR(vkDevice, imguiWindow->Swapchain, &windowImageCount, backbuffers);
+		err = vkGetSwapchainImagesKHR(vkDevice, swapchain, &windowImageCount, backbuffers);
+		CheckVkResult(err);
 
-			if (cap.currentExtent.width == 0xffffffff)
-			{
-				info.imageExtent.width = imguiWindow->Width = width;
-				info.imageExtent.height = imguiWindow->Height = height;
-			}
-			else
-			{
-				info.imageExtent.width = imguiWindow->Width = cap.currentExtent.width;
-				info.imageExtent.height = imguiWindow->Height = cap.currentExtent.height;
-			}
-			err = vkCreateSwapchainKHR(vkDevice, &info, vkAllocatorCallbacks, &imguiWindow->Swapchain);
-			CheckVkResult(err);
-			err = vkGetSwapchainImagesKHR(vkDevice, imguiWindow->Swapchain, &imguiWindow->ImageCount, nullptr);
-			CheckVkResult(err);
-			VkImage backbuffers[16] = {};
-			IM_ASSERT(imguiWindow->ImageCount >= minImageCount);
-			IM_ASSERT(imguiWindow->ImageCount < IM_ARRAYSIZE(backbuffers));
-			err = vkGetSwapchainImagesKHR(vkDevice, imguiWindow->Swapchain, &imguiWindow->ImageCount, backbuffers);
-			CheckVkResult(err);
+		IM_ASSERT(imguiWindow->Frames == nullptr);
 
-			IM_ASSERT(imguiWindow->Frames == nullptr);
+		// TODO: change to std::vector
+//		imguiWindow->Frames = (ImGui_Frame*)malloc(sizeof(ImGui_Frame) * imguiWindow->ImageCount);
+		imguiWindow->Frames = (ImGui_Frame*)malloc(sizeof(ImGui_Frame) * windowImageCount);
+//		imguiWindow->FrameSemaphores = (ImGui_FrameSemaphores*)malloc(sizeof(ImGui_FrameSemaphores) * imguiWindow->ImageCount);
+		imguiWindow->FrameSemaphores = (ImGui_FrameSemaphores*)malloc(sizeof(ImGui_FrameSemaphores) * windowImageCount);
+//		memset(imguiWindow->Frames, 0, sizeof(imguiWindow->Frames[0]) * imguiWindow->ImageCount);
+		memset(imguiWindow->Frames, 0, sizeof(imguiWindow->Frames[0]) * windowImageCount);
+//		memset(imguiWindow->FrameSemaphores, 0, sizeof(imguiWindow->FrameSemaphores[0]) * imguiWindow->ImageCount);
+		memset(imguiWindow->FrameSemaphores, 0, sizeof(imguiWindow->FrameSemaphores[0]) * windowImageCount);
 
-			// TODO: change to std::vector
-			imguiWindow->Frames = (ImGui_Frame*)malloc(sizeof(ImGui_Frame) * imguiWindow->ImageCount);
-			imguiWindow->FrameSemaphores = (ImGui_FrameSemaphores*)malloc(sizeof(ImGui_FrameSemaphores) * imguiWindow->ImageCount);
-			memset(imguiWindow->Frames, 0, sizeof(imguiWindow->Frames[0]) * imguiWindow->ImageCount);
-			memset(imguiWindow->FrameSemaphores, 0, sizeof(imguiWindow->FrameSemaphores[0]) * imguiWindow->ImageCount);
-
-			for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
-				imguiWindow->Frames[i].Backbuffer = backbuffers[i];
-		}
-		if (old_swapchain)
-			vkDestroySwapchainKHR(vkDevice, old_swapchain, vkAllocatorCallbacks);
-
-		// Create the Render Pass
-		{
-			VkAttachmentDescription attachment = {};
-			attachment.format = imguiWindow->SurfaceFormat.format;
-			attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-			attachment.loadOp = imguiWindow->ClearEnable ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-			attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-			attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-			attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-			attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-			VkAttachmentReference color_attachment = {};
-			color_attachment.attachment = 0;
-			color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-			VkSubpassDescription subpass = {};
-			subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-			subpass.colorAttachmentCount = 1;
-			subpass.pColorAttachments = &color_attachment;
-			VkSubpassDependency dependency = {};
-			dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-			dependency.dstSubpass = 0;
-			dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-			dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-			dependency.srcAccessMask = 0;
-			dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-			VkRenderPassCreateInfo info = {};
-			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-			info.attachmentCount = 1;
-			info.pAttachments = &attachment;
-			info.subpassCount = 1;
-			info.pSubpasses = &subpass;
-			info.dependencyCount = 1;
-			info.pDependencies = &dependency;
-			err = vkCreateRenderPass(vkDevice, &info, vkAllocatorCallbacks, &imguiWindow->RenderPass);
-			CheckVkResult(err);
-
-			// We do not create a pipeline by default as this is also used by examples' main.cpp,
-			// but secondary viewport in multi-viewport mode may want to create one with:
-			//ImGui_ImplVulkan_CreatePipeline(device, allocator, VK_NULL_HANDLE, wd->RenderPass, VK_SAMPLE_COUNT_1_BIT, &wd->Pipeline, bd->Subpass);
-		}
-
-		// Create The Image Views
-		{
-			VkImageViewCreateInfo info = {};
-			info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			info.format = imguiWindow->SurfaceFormat.format;
-			info.components.r = VK_COMPONENT_SWIZZLE_R;
-			info.components.g = VK_COMPONENT_SWIZZLE_G;
-			info.components.b = VK_COMPONENT_SWIZZLE_B;
-			info.components.a = VK_COMPONENT_SWIZZLE_A;
-			VkImageSubresourceRange image_range = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-			info.subresourceRange = image_range;
-
-			for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
-			{
-				ImGui_Frame* fd = &imguiWindow->Frames[i];
-				info.image = fd->Backbuffer;
-				err = vkCreateImageView(vkDevice, &info, vkAllocatorCallbacks, &fd->BackbufferView);
-				CheckVkResult(err);
-			}
-		}
-
-		// Create Framebuffer
-		{
-			VkImageView attachment[1];
-			VkFramebufferCreateInfo info = {};
-			info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			info.renderPass = imguiWindow->RenderPass;
-			info.attachmentCount = 1;
-			info.pAttachments = attachment;
-			info.width = imguiWindow->Width;
-			info.height = imguiWindow->Height;
-			info.layers = 1;
-			for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
-			{
-				ImGui_Frame* fd = &imguiWindow->Frames[i];
-				attachment[0] = fd->BackbufferView;
-				err = vkCreateFramebuffer(vkDevice, &info, vkAllocatorCallbacks, &fd->Framebuffer);
-				CheckVkResult(err);
-			}
-		}
+//		for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
+		for (uint32_t i = 0; i < windowImageCount; i++)
+			imguiWindow->Frames[i].Backbuffer = backbuffers[i];
 	}
+	if (old_swapchain)
+		vkDestroySwapchainKHR(vkDevice, old_swapchain, vkAllocatorCallbacks);
+
+	// Create the Render Pass
 	{
-		// Create Command Buffers
-		VkResult err;
-		for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
+		VkAttachmentDescription attachment = {};
+		attachment.format = imguiWindow->SurfaceFormat.format;
+		attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		attachment.loadOp = imguiWindow->ClearEnable ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		VkAttachmentReference color_attachment = {};
+		color_attachment.attachment = 0;
+		color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		VkSubpassDescription subpass = {};
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpass.colorAttachmentCount = 1;
+		subpass.pColorAttachments = &color_attachment;
+		VkSubpassDependency dependency = {};
+		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependency.dstSubpass = 0;
+		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.srcAccessMask = 0;
+		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		VkRenderPassCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		info.attachmentCount = 1;
+		info.pAttachments = &attachment;
+		info.subpassCount = 1;
+		info.pSubpasses = &subpass;
+		info.dependencyCount = 1;
+		info.pDependencies = &dependency;
+		err = vkCreateRenderPass(vkDevice, &info, vkAllocatorCallbacks, &imguiWindow->RenderPass);
+		CheckVkResult(err);
+
+		// We do not create a pipeline by default as this is also used by examples' main.cpp,
+		// but secondary viewport in multi-viewport mode may want to create one with:
+		//ImGui_ImplVulkan_CreatePipeline(device, allocator, VK_NULL_HANDLE, wd->RenderPass, VK_SAMPLE_COUNT_1_BIT, &wd->Pipeline, bd->Subpass);
+	}
+
+	// Create The Image Views
+	{
+		VkImageViewCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		info.format = imguiWindow->SurfaceFormat.format;
+		info.components.r = VK_COMPONENT_SWIZZLE_R;
+		info.components.g = VK_COMPONENT_SWIZZLE_G;
+		info.components.b = VK_COMPONENT_SWIZZLE_B;
+		info.components.a = VK_COMPONENT_SWIZZLE_A;
+		VkImageSubresourceRange image_range = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		info.subresourceRange = image_range;
+
+//		for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
+		for (uint32_t i = 0; i < windowImageCount; i++)
 		{
 			ImGui_Frame* fd = &imguiWindow->Frames[i];
-			ImGui_FrameSemaphores* fsd = &imguiWindow->FrameSemaphores[i];
-			{
-				VkCommandPoolCreateInfo info = {};
-				info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-				info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-				info.queueFamilyIndex = vkQueueGraphicsFamily;
-				err = vkCreateCommandPool(vkDevice, &info, vkAllocatorCallbacks, &fd->CommandPool);
-				CheckVkResult(err);
-			}
-			{
-				VkCommandBufferAllocateInfo info = {};
-				info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-				info.commandPool = fd->CommandPool;
-				info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-				info.commandBufferCount = 1;
-				err = vkAllocateCommandBuffers(vkDevice, &info, &fd->CommandBuffer);
-				CheckVkResult(err);
-			}
-			{
-				VkFenceCreateInfo info = {};
-				info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-				info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-				err = vkCreateFence(vkDevice, &info, vkAllocatorCallbacks, &fd->Fence);
-				CheckVkResult(err);
-			}
-			{
-				VkSemaphoreCreateInfo info = {};
-				info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-				err = vkCreateSemaphore(vkDevice, &info, vkAllocatorCallbacks, &fsd->ImageAcquiredSemaphore);
-				CheckVkResult(err);
-				err = vkCreateSemaphore(vkDevice, &info, vkAllocatorCallbacks, &fsd->RenderCompleteSemaphore);
-				CheckVkResult(err);
-			}
+			info.image = fd->Backbuffer;
+			err = vkCreateImageView(vkDevice, &info, vkAllocatorCallbacks, &fd->BackbufferView);
+			CheckVkResult(err);
 		}
 	}
-	// END
+
+	// Create Framebuffer
+	{
+		VkImageView attachment[1];
+		VkFramebufferCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		info.renderPass = imguiWindow->RenderPass;
+		info.attachmentCount = 1;
+		info.pAttachments = attachment;
+//		info.width = imguiWindow->Width;
+//		info.height = imguiWindow->Height;
+		info.width = windowWidth;
+		info.height = windowHeight;
+		info.layers = 1;
+//		for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
+		for (uint32_t i = 0; i < windowImageCount; i++)
+		{
+			ImGui_Frame* fd = &imguiWindow->Frames[i];
+			attachment[0] = fd->BackbufferView;
+			err = vkCreateFramebuffer(vkDevice, &info, vkAllocatorCallbacks, &fd->Framebuffer);
+			CheckVkResult(err);
+		}
+	}
+
+	// Create Command Buffers
+//	for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
+	for (uint32_t i = 0; i < windowImageCount; i++)
+	{
+		ImGui_Frame* fd = &imguiWindow->Frames[i];
+		ImGui_FrameSemaphores* fsd = &imguiWindow->FrameSemaphores[i];
+		{
+			VkCommandPoolCreateInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+			info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+			info.queueFamilyIndex = vkQueueGraphicsFamily;
+			err = vkCreateCommandPool(vkDevice, &info, vkAllocatorCallbacks, &fd->CommandPool);
+			CheckVkResult(err);
+		}
+		{
+			VkCommandBufferAllocateInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			info.commandPool = fd->CommandPool;
+			info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+			info.commandBufferCount = 1;
+			err = vkAllocateCommandBuffers(vkDevice, &info, &fd->CommandBuffer);
+			CheckVkResult(err);
+		}
+		{
+			VkFenceCreateInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+			info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+			err = vkCreateFence(vkDevice, &info, vkAllocatorCallbacks, &fd->Fence);
+			CheckVkResult(err);
+		}
+		{
+			VkSemaphoreCreateInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+			err = vkCreateSemaphore(vkDevice, &info, vkAllocatorCallbacks, &fsd->ImageAcquiredSemaphore);
+			CheckVkResult(err);
+			err = vkCreateSemaphore(vkDevice, &info, vkAllocatorCallbacks, &fsd->RenderCompleteSemaphore);
+			CheckVkResult(err);
+		}
+	}
 }
 
 void Renderer::CleanupVulkan()
@@ -688,7 +717,8 @@ void Renderer::CleanupVulkanWindow()
 {
     vkDeviceWaitIdle(vkDevice);
 
-    for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
+//    for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
+    for (uint32_t i = 0; i < windowImageCount; i++)
     {
 		ImGui_Frame* fd = &imguiWindow->Frames[i];
 		{
@@ -716,8 +746,10 @@ void Renderer::CleanupVulkanWindow()
     imguiWindow->FrameSemaphores = nullptr;
     vkDestroyPipeline(vkDevice, imguiWindow->Pipeline, vkAllocatorCallbacks);
     vkDestroyRenderPass(vkDevice, imguiWindow->RenderPass, vkAllocatorCallbacks);
-    vkDestroySwapchainKHR(vkDevice, imguiWindow->Swapchain, vkAllocatorCallbacks);
-    vkDestroySurfaceKHR(vkInstance, imguiWindow->Surface, vkAllocatorCallbacks);
+//    vkDestroySwapchainKHR(vkDevice, imguiWindow->Swapchain, vkAllocatorCallbacks);
+    vkDestroySwapchainKHR(vkDevice, swapchain, vkAllocatorCallbacks);
+//    vkDestroySurfaceKHR(vkInstance, imguiWindow->Surface, vkAllocatorCallbacks);
+    vkDestroySurfaceKHR(vkInstance, windowSurface, vkAllocatorCallbacks);
 
     *imguiWindow = ImGui_Window();
 }
@@ -752,7 +784,8 @@ void Renderer::FrameRenderImGui(ImDrawData* draw_data)
 
     VkSemaphore image_acquired_semaphore  = imguiWindow->FrameSemaphores[imguiWindow->SemaphoreIndex].ImageAcquiredSemaphore;
     VkSemaphore render_complete_semaphore = imguiWindow->FrameSemaphores[imguiWindow->SemaphoreIndex].RenderCompleteSemaphore;
-    err = vkAcquireNextImageKHR(vkDevice, imguiWindow->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &imguiWindow->FrameIndex);
+//    err = vkAcquireNextImageKHR(vkDevice, imguiWindow->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &imguiWindow->FrameIndex);
+    err = vkAcquireNextImageKHR(vkDevice, swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &imguiWindow->FrameIndex);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
     {
         swapChainRebuild = true;
@@ -782,8 +815,10 @@ void Renderer::FrameRenderImGui(ImDrawData* draw_data)
         info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         info.renderPass = imguiWindow->RenderPass;
         info.framebuffer = fd->Framebuffer;
-        info.renderArea.extent.width = imguiWindow->Width;
-        info.renderArea.extent.height = imguiWindow->Height;
+//        info.renderArea.extent.width = imguiWindow->Width;
+//        info.renderArea.extent.height = imguiWindow->Height;
+        info.renderArea.extent.width = windowWidth;
+        info.renderArea.extent.height = windowHeight;
         info.clearValueCount = 1;
         info.pClearValues = &imguiWindow->ClearValue;
         vkCmdBeginRenderPass(fd->CommandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
@@ -823,7 +858,8 @@ void Renderer::FramePresent()
     info.waitSemaphoreCount = 1;
     info.pWaitSemaphores = &render_complete_semaphore;
     info.swapchainCount = 1;
-    info.pSwapchains = &imguiWindow->Swapchain;
+//    info.pSwapchains = &imguiWindow->Swapchain;
+    info.pSwapchains = &swapchain;
     info.pImageIndices = &imguiWindow->FrameIndex;
     VkResult err = vkQueuePresentKHR(vkGraphicsQueue, &info);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
@@ -832,7 +868,8 @@ void Renderer::FramePresent()
         return;
     }
     CheckVkResult(err);
-    imguiWindow->SemaphoreIndex = (imguiWindow->SemaphoreIndex + 1) % imguiWindow->ImageCount; // Now we can use the next set of semaphores
+//    imguiWindow->SemaphoreIndex = (imguiWindow->SemaphoreIndex + 1) % imguiWindow->ImageCount; // Now we can use the next set of semaphores
+    imguiWindow->SemaphoreIndex = (imguiWindow->SemaphoreIndex + 1) % windowImageCount; // Now we can use the next set of semaphores
 }
 
 void Renderer::CheckVkResult(VkResult err)

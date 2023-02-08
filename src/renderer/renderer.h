@@ -26,8 +26,6 @@ class SDL_Window;
 class RendererLogicalDevice;
 class RendererPhysicalDevice;
 
-#if 1
-
 struct ImGui_Frame
 {
     VkCommandPool       CommandPool;
@@ -38,18 +36,17 @@ struct ImGui_Frame
     VkFramebuffer       Framebuffer;
 };
 
+#if 1
 struct ImGui_FrameSemaphores
 {
     VkSemaphore         ImageAcquiredSemaphore;
     VkSemaphore         RenderCompleteSemaphore;
 };
+#endif
 
 struct ImGui_Window
 {
-    int                 Width;
-    int                 Height;
-    VkSwapchainKHR      Swapchain;
-    VkSurfaceKHR        Surface;
+//    VkSurfaceKHR        Surface;
     VkSurfaceFormatKHR  SurfaceFormat;
     VkPresentModeKHR    PresentMode;
     VkRenderPass        RenderPass;
@@ -57,7 +54,6 @@ struct ImGui_Window
     bool                ClearEnable;
     VkClearValue        ClearValue;
     uint32_t            FrameIndex;             // Current frame being rendered to (0 <= FrameIndex < FrameInFlightCount)
-    uint32_t            ImageCount;             // Number of simultaneous in-flight frames (returned by vkGetSwapchainImagesKHR, usually derived from min_image_count)
     uint32_t            SemaphoreIndex;         // Current set of swapchain wait semaphores we're using (needs to be distinct from per frame data)
     ImGui_Frame*            Frames;
     ImGui_FrameSemaphores*  FrameSemaphores;
@@ -69,7 +65,6 @@ struct ImGui_Window
         ClearEnable = true;
     }
 };
-#endif
 
 class Renderer
 {
@@ -96,11 +91,19 @@ public:
     VkDebugReportCallbackEXT vkDebugReport;
     VkPipelineCache          vkPipelineCache;
     VkDescriptorPool         vkDescriptorPool;
+    VkSwapchainKHR      swapchain;
+
+//    VkSemaphore         imageAcquiredSemaphore;
+//    VkSemaphore         renderCompleteSemaphore;
 
     ImGui_Window imguiVulkanWindowData;	// TODO: Remove
 
-    uint32_t                 minImageCount;
-    bool                     swapChainRebuild;
+    uint32_t	minImageCount;
+	uint32_t	windowImageCount;
+    bool		swapChainRebuild;
+	int			windowWidth;
+	int			windowHeight;
+    VkSurfaceKHR	windowSurface;
 
     VkSurfaceKHR vkSurface;
     ImGui_Window* imguiWindow;	// TODO: Remove
