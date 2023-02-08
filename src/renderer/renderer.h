@@ -22,12 +22,36 @@
 
 #include "system/errors.h"
 
-//#include "rendererphysicaldevice.h"
-
 class SDL_Window;
 class RendererLogicalDevice;
 class RendererPhysicalDevice;
+#if 0
+struct ImGui_ImplVulkanH_Window
+{
+    int                 Width;
+    int                 Height;
+    VkSwapchainKHR      Swapchain;
+    VkSurfaceKHR        Surface;
+    VkSurfaceFormatKHR  SurfaceFormat;
+    VkPresentModeKHR    PresentMode;
+    VkRenderPass        RenderPass;
+    VkPipeline          Pipeline;               // The window pipeline may uses a different VkRenderPass than the one passed in ImGui_ImplVulkan_InitInfo
+    bool                ClearEnable;
+    VkClearValue        ClearValue;
+    uint32_t            FrameIndex;             // Current frame being rendered to (0 <= FrameIndex < FrameInFlightCount)
+    uint32_t            ImageCount;             // Number of simultaneous in-flight frames (returned by vkGetSwapchainImagesKHR, usually derived from min_image_count)
+    uint32_t            SemaphoreIndex;         // Current set of swapchain wait semaphores we're using (needs to be distinct from per frame data)
+    ImGui_ImplVulkanH_Frame*            Frames;
+    ImGui_ImplVulkanH_FrameSemaphores*  FrameSemaphores;
 
+    ImGui_ImplVulkanH_Window()
+    {
+        memset((void*)this, 0, sizeof(*this));
+        PresentMode = (VkPresentModeKHR)~0;     // Ensure we get an error if user doesn't set this.
+        ClearEnable = true;
+    }
+};
+#endif
 class Renderer
 {
 public:
@@ -55,13 +79,13 @@ public:
     VkPipelineCache          vkPipelineCache;
     VkDescriptorPool         vkDescriptorPool;
 
-    ImGui_ImplVulkanH_Window imguiVulkanWindowData;
-	
+    ImGui_ImplVulkanH_Window imguiVulkanWindowData;	// TODO: Remove
+
     uint32_t                 minImageCount;
     bool                     swapChainRebuild;
 
     VkSurfaceKHR vkSurface;
-    ImGui_ImplVulkanH_Window* imguiWindow;
+    ImGui_ImplVulkanH_Window* imguiWindow;	// TODO: Remove
 
 	void Initialise(SDL_Window* window);
 	void Cleanup();
@@ -69,6 +93,7 @@ public:
 	void BeginFrame();
 
     void Setup();
+	// TODO: refactor out
     void SetupVulkanWindow(ImGui_ImplVulkanH_Window* imguiWindow, VkSurfaceKHR surface, int width, int height);
     void CleanupVulkan();
     void CleanupVulkanWindow();
