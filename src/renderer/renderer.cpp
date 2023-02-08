@@ -59,6 +59,8 @@ Renderer::Renderer()
 	windowImageCount = 0;
 	windowWidth = 0;
 	windowHeight = 0;
+	windowSurface = VK_NULL_HANDLE;
+	swapchain = VK_NULL_HANDLE;
 }
 
 Renderer::~Renderer()
