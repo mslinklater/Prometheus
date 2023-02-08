@@ -15,6 +15,8 @@
 #include "system/config.h"
 #include "system/log.h"
 
+#include "backends/imgui_impl_vulkan.h"
+
 bool Renderer::sdlInitialised = false;
 SDL_WindowFlags Renderer::sdlWindowFlags;
 SDL_Window* Renderer::pSdlWindow;
@@ -93,6 +95,7 @@ void Renderer::Initialise(SDL_Window* window)
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForVulkan(window);
     ImGui_ImplVulkan_InitInfo init_info = {};
+
     init_info.Instance = vkInstance;
     init_info.PhysicalDevice = physicalDevice->GetVkPhysicalDevice();
     init_info.Device = vkDevice;
@@ -388,7 +391,7 @@ void Renderer::Setup()
 }
 
 // TODO: Move
-void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* _imguiWindow, VkSurfaceKHR surface, int width, int height)
+void Renderer::SetupVulkanWindow(ImGui_Window* _imguiWindow, VkSurfaceKHR surface, int width, int height)
 {
 	imguiWindow = _imguiWindow;
     imguiWindow->Surface = surface;
@@ -438,7 +441,7 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* _imguiWindow, VkSurfa
 		for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
 		{
 			{
-				ImGui_ImplVulkanH_Frame* fd = &imguiWindow->Frames[i];
+				ImGui_Frame* fd = &imguiWindow->Frames[i];
 				vkDestroyFence(vkDevice, fd->Fence, vkAllocatorCallbacks);
 				vkFreeCommandBuffers(vkDevice, fd->CommandPool, 1, &fd->CommandBuffer);
 				vkDestroyCommandPool(vkDevice, fd->CommandPool, vkAllocatorCallbacks);
@@ -451,7 +454,7 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* _imguiWindow, VkSurfa
 			}
 			{
 				// TODO: Remove
-				ImGui_ImplVulkanH_FrameSemaphores* fsd = &imguiWindow->FrameSemaphores[i];
+				ImGui_FrameSemaphores* fsd = &imguiWindow->FrameSemaphores[i];
 				vkDestroySemaphore(vkDevice, fsd->ImageAcquiredSemaphore, vkAllocatorCallbacks);
 				vkDestroySemaphore(vkDevice, fsd->RenderCompleteSemaphore, vkAllocatorCallbacks);
 				fsd->ImageAcquiredSemaphore = fsd->RenderCompleteSemaphore = VK_NULL_HANDLE;
@@ -517,8 +520,8 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* _imguiWindow, VkSurfa
 
 			IM_ASSERT(imguiWindow->Frames == nullptr);
 			// TODO: remove
-			imguiWindow->Frames = (ImGui_ImplVulkanH_Frame*)IM_ALLOC(sizeof(ImGui_ImplVulkanH_Frame) * imguiWindow->ImageCount);
-			imguiWindow->FrameSemaphores = (ImGui_ImplVulkanH_FrameSemaphores*)IM_ALLOC(sizeof(ImGui_ImplVulkanH_FrameSemaphores) * imguiWindow->ImageCount);
+			imguiWindow->Frames = (ImGui_Frame*)IM_ALLOC(sizeof(ImGui_Frame) * imguiWindow->ImageCount);
+			imguiWindow->FrameSemaphores = (ImGui_FrameSemaphores*)IM_ALLOC(sizeof(ImGui_FrameSemaphores) * imguiWindow->ImageCount);
 
 			memset(imguiWindow->Frames, 0, sizeof(imguiWindow->Frames[0]) * imguiWindow->ImageCount);
 			memset(imguiWindow->FrameSemaphores, 0, sizeof(imguiWindow->FrameSemaphores[0]) * imguiWindow->ImageCount);
@@ -585,7 +588,7 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* _imguiWindow, VkSurfa
 
 			for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
 			{
-				ImGui_ImplVulkanH_Frame* fd = &imguiWindow->Frames[i];
+				ImGui_Frame* fd = &imguiWindow->Frames[i];
 				info.image = fd->Backbuffer;
 				err = vkCreateImageView(vkDevice, &info, vkAllocatorCallbacks, &fd->BackbufferView);
 				CheckVkResult(err);
@@ -605,7 +608,7 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* _imguiWindow, VkSurfa
 			info.layers = 1;
 			for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
 			{
-				ImGui_ImplVulkanH_Frame* fd = &imguiWindow->Frames[i];
+				ImGui_Frame* fd = &imguiWindow->Frames[i];
 				attachment[0] = fd->BackbufferView;
 				err = vkCreateFramebuffer(vkDevice, &info, vkAllocatorCallbacks, &fd->Framebuffer);
 				CheckVkResult(err);
@@ -617,8 +620,8 @@ void Renderer::SetupVulkanWindow(ImGui_ImplVulkanH_Window* _imguiWindow, VkSurfa
 		VkResult err;
 		for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
 		{
-			ImGui_ImplVulkanH_Frame* fd = &imguiWindow->Frames[i];
-			ImGui_ImplVulkanH_FrameSemaphores* fsd = &imguiWindow->FrameSemaphores[i];
+			ImGui_Frame* fd = &imguiWindow->Frames[i];
+			ImGui_FrameSemaphores* fsd = &imguiWindow->FrameSemaphores[i];
 			{
 				VkCommandPoolCreateInfo info = {};
 				info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -669,7 +672,48 @@ void Renderer::CleanupVulkan()
 
 void Renderer::CleanupVulkanWindow()
 {
-    ImGui_ImplVulkanH_DestroyWindow(vkInstance, vkDevice, &imguiVulkanWindowData, vkAllocatorCallbacks);
+//    ImGui_ImplVulkanH_DestroyWindow(vkInstance, vkDevice, &imguiVulkanWindowData, vkAllocatorCallbacks);
+
+//void ImGui_ImplVulkanH_DestroyWindow(VkInstance instance, VkDevice device, ImGui_ImplVulkanH_Window* wd, const VkAllocationCallbacks* allocator)
+//{
+    vkDeviceWaitIdle(vkDevice); // FIXME: We could wait on the Queue if we had the queue in wd-> (otherwise VulkanH functions can't use globals)
+    //vkQueueWaitIdle(bd->Queue);
+
+    for (uint32_t i = 0; i < imguiWindow->ImageCount; i++)
+    {
+//        ImGui_ImplVulkanH_DestroyFrame(vkDevice, &imguiWindow->Frames[i], vkAllocatorCallbacks);
+		ImGui_Frame* fd = &imguiWindow->Frames[i];
+		{
+			vkDestroyFence(vkDevice, fd->Fence, vkAllocatorCallbacks);
+			vkFreeCommandBuffers(vkDevice, fd->CommandPool, 1, &fd->CommandBuffer);
+			vkDestroyCommandPool(vkDevice, fd->CommandPool, vkAllocatorCallbacks);
+			fd->Fence = VK_NULL_HANDLE;
+			fd->CommandBuffer = VK_NULL_HANDLE;
+			fd->CommandPool = VK_NULL_HANDLE;
+
+			vkDestroyImageView(vkDevice, fd->BackbufferView, vkAllocatorCallbacks);
+			vkDestroyFramebuffer(vkDevice, fd->Framebuffer, vkAllocatorCallbacks);
+		}
+
+//        ImGui_ImplVulkanH_DestroyFrameSemaphores(vkDevice, &imguiWindow->FrameSemaphores[i], vkAllocatorCallbacks);
+		ImGui_FrameSemaphores* fsd = &imguiWindow->FrameSemaphores[i];
+		{
+			vkDestroySemaphore(vkDevice, fsd->ImageAcquiredSemaphore, vkAllocatorCallbacks);
+			vkDestroySemaphore(vkDevice, fsd->RenderCompleteSemaphore, vkAllocatorCallbacks);
+			fsd->ImageAcquiredSemaphore = fsd->RenderCompleteSemaphore = VK_NULL_HANDLE;
+		}
+    }
+    IM_FREE(imguiWindow->Frames);
+    IM_FREE(imguiWindow->FrameSemaphores);
+    imguiWindow->Frames = nullptr;
+    imguiWindow->FrameSemaphores = nullptr;
+    vkDestroyPipeline(vkDevice, imguiWindow->Pipeline, vkAllocatorCallbacks);
+    vkDestroyRenderPass(vkDevice, imguiWindow->RenderPass, vkAllocatorCallbacks);
+    vkDestroySwapchainKHR(vkDevice, imguiWindow->Swapchain, vkAllocatorCallbacks);
+    vkDestroySurfaceKHR(vkInstance, imguiWindow->Surface, vkAllocatorCallbacks);
+
+    *imguiWindow = ImGui_Window();
+//}
 }
 
 void Renderer::BeginFrame()

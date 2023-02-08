@@ -15,7 +15,7 @@
 #include <memory>
 #include "imgui.h"
 #include "backends/imgui_impl_sdl.h"
-#include "backends/imgui_impl_vulkan.h"
+//#include "backends/imgui_impl_vulkan.h"
 #include <SDL.h>
 #include <SDL_vulkan.h>
 #include <vulkan/vulkan.h>
@@ -25,8 +25,26 @@
 class SDL_Window;
 class RendererLogicalDevice;
 class RendererPhysicalDevice;
-#if 0
-struct ImGui_ImplVulkanH_Window
+
+#if 1
+
+struct ImGui_Frame
+{
+    VkCommandPool       CommandPool;
+    VkCommandBuffer     CommandBuffer;
+    VkFence             Fence;
+    VkImage             Backbuffer;
+    VkImageView         BackbufferView;
+    VkFramebuffer       Framebuffer;
+};
+
+struct ImGui_FrameSemaphores
+{
+    VkSemaphore         ImageAcquiredSemaphore;
+    VkSemaphore         RenderCompleteSemaphore;
+};
+
+struct ImGui_Window
 {
     int                 Width;
     int                 Height;
@@ -41,10 +59,10 @@ struct ImGui_ImplVulkanH_Window
     uint32_t            FrameIndex;             // Current frame being rendered to (0 <= FrameIndex < FrameInFlightCount)
     uint32_t            ImageCount;             // Number of simultaneous in-flight frames (returned by vkGetSwapchainImagesKHR, usually derived from min_image_count)
     uint32_t            SemaphoreIndex;         // Current set of swapchain wait semaphores we're using (needs to be distinct from per frame data)
-    ImGui_ImplVulkanH_Frame*            Frames;
-    ImGui_ImplVulkanH_FrameSemaphores*  FrameSemaphores;
+    ImGui_Frame*            Frames;
+    ImGui_FrameSemaphores*  FrameSemaphores;
 
-    ImGui_ImplVulkanH_Window()
+    ImGui_Window()
     {
         memset((void*)this, 0, sizeof(*this));
         PresentMode = (VkPresentModeKHR)~0;     // Ensure we get an error if user doesn't set this.
@@ -52,6 +70,7 @@ struct ImGui_ImplVulkanH_Window
     }
 };
 #endif
+
 class Renderer
 {
 public:
@@ -79,13 +98,13 @@ public:
     VkPipelineCache          vkPipelineCache;
     VkDescriptorPool         vkDescriptorPool;
 
-    ImGui_ImplVulkanH_Window imguiVulkanWindowData;	// TODO: Remove
+    ImGui_Window imguiVulkanWindowData;	// TODO: Remove
 
     uint32_t                 minImageCount;
     bool                     swapChainRebuild;
 
     VkSurfaceKHR vkSurface;
-    ImGui_ImplVulkanH_Window* imguiWindow;	// TODO: Remove
+    ImGui_Window* imguiWindow;	// TODO: Remove
 
 	void Initialise(SDL_Window* window);
 	void Cleanup();
@@ -94,7 +113,7 @@ public:
 
     void Setup();
 	// TODO: refactor out
-    void SetupVulkanWindow(ImGui_ImplVulkanH_Window* imguiWindow, VkSurfaceKHR surface, int width, int height);
+    void SetupVulkanWindow(ImGui_Window* imguiWindow, VkSurfaceKHR surface, int width, int height);
     void CleanupVulkan();
     void CleanupVulkanWindow();
     void FrameRender(ImDrawData* draw_data);
