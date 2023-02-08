@@ -81,7 +81,6 @@ public:
 
     static EError SdlInit();
     static SDL_WindowFlags SdlGetWindowFlags(){ return sdlWindowFlags; }
-    static SDL_Window* SdlGetWindowPtr(){ return pSdlWindow; }
 
     // Main API
 
@@ -114,10 +113,15 @@ public:
     void Setup();
 	// TODO: refactor out
     void SetupVulkanWindow(ImGui_Window* imguiWindow, VkSurfaceKHR surface, int width, int height);
+	void SetupImGui();
     void CleanupVulkan();
     void CleanupVulkanWindow();
-    void FrameRender(ImDrawData* draw_data);
+
+    void FrameRenderImGui(ImDrawData* draw_data);
+
     void FramePresent();
+
+	void CreateOrResizeWindow(uint32_t width, uint32_t height);
 
 	bool validation;
 
@@ -125,7 +129,6 @@ public:
 
     static bool sdlInitialised;
     static SDL_WindowFlags sdlWindowFlags;
-    static SDL_Window* pSdlWindow;
 
     // Main
 

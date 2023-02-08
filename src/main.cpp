@@ -110,7 +110,7 @@ int main(int, char**)
             renderer->imguiWindow->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
             renderer->imguiWindow->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
             renderer->imguiWindow->ClearValue.color.float32[3] = clear_color.w;
-            renderer->FrameRender(draw_data);
+            renderer->FrameRenderImGui(draw_data);
             renderer->FramePresent();
         }
     }
