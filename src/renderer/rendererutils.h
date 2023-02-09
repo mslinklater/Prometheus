@@ -1,6 +1,8 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
+void CheckVkResult(VkResult err);
+
 namespace RendererUtils
 {
 	VkSurfaceFormatKHR FindBestSurfaceFormat(	VkPhysicalDevice device, 

@@ -1,4 +1,15 @@
+#include <iostream>
+
 #include "rendererutils.h"
+
+void CheckVkResult(VkResult err)
+{
+    if (err == 0)
+        return;
+    fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+    if (err < 0)
+        abort();
+}
 
 namespace RendererUtils
 {

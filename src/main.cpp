@@ -38,6 +38,7 @@ int main(int, char**)
     // Our state
     bool show_demo_window = true;
     bool show_another_window = false;
+
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Main loop
@@ -62,6 +63,8 @@ int main(int, char**)
 		renderer->BeginFrame();
 
         ImGui::NewFrame();
+
+		renderer->DrawVulkanDebugWindow();
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         if (show_demo_window)
@@ -106,11 +109,11 @@ int main(int, char**)
         const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
         if (!is_minimized)
         {
-            renderer->imguiWindow->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
-            renderer->imguiWindow->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
-            renderer->imguiWindow->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
-            renderer->imguiWindow->ClearValue.color.float32[3] = clear_color.w;
-            renderer->FrameRenderImGui(draw_data);
+            renderer->clearValue.color.float32[0] = clear_color.x * clear_color.w;
+            renderer->clearValue.color.float32[1] = clear_color.y * clear_color.w;
+            renderer->clearValue.color.float32[2] = clear_color.z * clear_color.w;
+            renderer->clearValue.color.float32[3] = clear_color.w;
+            renderer->ImGuiRender(draw_data);
             renderer->FramePresent();
         }
     }

@@ -5,17 +5,19 @@
 #include <optional>
 #include <vulkan/vulkan.h>
 
-class RendererPhysicalDevice
+class VulkanPhysicalDevice
 {
   public:
-    RendererPhysicalDevice() {}
-    virtual ~RendererPhysicalDevice() {}
+    VulkanPhysicalDevice() {}
+    virtual ~VulkanPhysicalDevice() {}
 
     void SetVkPhysicalDevice(VkPhysicalDevice deviceIn);
 	VkPhysicalDevice GetVkPhysicalDevice(){ return device; }
 
     void LogDeviceName();
     void LogDeviceInfo();
+
+	void DrawDebug();
 
 	const std::string& GetName(){ return name; }
 

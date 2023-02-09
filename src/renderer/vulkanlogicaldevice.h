@@ -2,11 +2,11 @@
 
 #include <vulkan/vulkan.h>
 
-class RendererLogicalDevice
+class VulkanLogicalDevice
 {
 public:
-	RendererLogicalDevice(VkDevice device);
-	virtual ~RendererLogicalDevice(){}
+	VulkanLogicalDevice(VkDevice device);
+	virtual ~VulkanLogicalDevice(){}
 
 	VkDevice GetVkDevice(){return device;}
 private:

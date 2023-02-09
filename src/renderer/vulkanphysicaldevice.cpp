@@ -1,9 +1,11 @@
-#include "rendererphysicaldevice.h"
+#include "vulkanphysicaldevice.h"
 #include "system/log.h"
 #include "system/config.h"
 #include "vulkan/vk_layer_utils.h"
 
-void RendererPhysicalDevice::SetVkPhysicalDevice(VkPhysicalDevice deviceIn)
+#include "imgui.h"
+
+void VulkanPhysicalDevice::SetVkPhysicalDevice(VkPhysicalDevice deviceIn)
 {
 	device = deviceIn;
 	acceptable = true;
@@ -56,12 +58,40 @@ void RendererPhysicalDevice::SetVkPhysicalDevice(VkPhysicalDevice deviceIn)
 	}
 }
 
-void RendererPhysicalDevice::LogDeviceName()
+void VulkanPhysicalDevice::DrawDebug()
+{
+	std::string deviceName = properties.deviceName;
+	if (ImGui::TreeNode(deviceName.c_str()))
+	{
+		switch(properties.deviceType)
+		{
+			case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+				ImGui::Text("ITEGRATED GPU");
+				break;
+			case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+				ImGui::Text("DISCRETE GPU");
+				break;
+			case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+				ImGui::Text("VIRTUAL GPU");
+				break;
+			case VK_PHYSICAL_DEVICE_TYPE_CPU:
+				ImGui::Text("CPU");
+				break;
+			default:
+				ImGui::Text("OTHER");
+				break;
+		}
+		ImGui::Text("API Version %d.%d.%d.%d", VK_API_VERSION_VARIANT(properties.apiVersion),VK_API_VERSION_MAJOR(properties.apiVersion),VK_API_VERSION_MINOR(properties.apiVersion),VK_API_VERSION_PATCH(properties.apiVersion));
+		ImGui::TreePop();
+	}
+}
+
+void VulkanPhysicalDevice::LogDeviceName()
 {
 	LOGINFOF("Vulkan physical device: %s", properties.deviceName);
 }
 
-void RendererPhysicalDevice::LogDeviceInfo()
+void VulkanPhysicalDevice::LogDeviceInfo()
 {
     LOGINFO("");
 	LOGINFO("=== Vulkan Physical Device Info ===");
@@ -301,7 +331,7 @@ void RendererPhysicalDevice::LogDeviceInfo()
 	}
 }
 
-bool RendererPhysicalDevice::IsDiscreetGPU()
+bool VulkanPhysicalDevice::IsDiscreetGPU()
 {
 	return properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 }
