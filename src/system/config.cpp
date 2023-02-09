@@ -17,15 +17,27 @@ std::map<std::string, std::vector<std::string>> stringVectorSettings;
 void ParseCommandLine(int argc, char* argv[])
 {
     LOGINFO("Config:ParseCommandLine");
+
+	// store the application path inthe config
+	
+	SetString("application.path", argv[0]);
+
     // find all the booleans
-    for (int i = 0; i < argc; i++)
+    for (int i = 1; i < argc; i++)
     {
+		std::string argument = argv[i];
+
+		int bp=0;
+		bp++;
+#if 0
         if ((argv[i][0] == '-') && (argv[i][1] != '-'))
         {
             // found boolean
             std::string key = &(argv[i][1]);
             SetBool(key, true);
         }
+#endif
+
     }
 }
 
@@ -208,6 +220,11 @@ const std::string GetString(std::string key)
         return stringSettings[key];
     }
     return "INVALID";
+}
+
+void SetString(std::string key, std::string value)
+{
+	stringSettings[key] = value;
 }
 
 bool StringVectorExists(std::string key)

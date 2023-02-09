@@ -9,10 +9,8 @@
 
 namespace Config
 {
-//  public:
-//    static Config* Instance();
-
     void ParseCommandLine(int argc, char* argv[]);
+
     void ParseFile(std::string filename);
     void SaveCurrentConfigToFile(std::string filename);
 
@@ -24,14 +22,13 @@ namespace Config
 
     bool StringExists(std::string key);
     const std::string GetString(std::string key);
+	void SetString(std::string key, std::string value);
 
     bool StringVectorExists(std::string key);
     const std::vector<std::string> GetStringVector(std::string key);
 
-//private:
     void Initialise();
     void Dump();
 
     bool FindTypeKeyValue(const std::string& line, std::string& type, std::string& key, std::string& value);
-
 }

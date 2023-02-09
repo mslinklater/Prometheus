@@ -693,6 +693,7 @@ void Renderer::ImGuiRender(ImDrawData* draw_data)
 
     VkSemaphore image_acquired_semaphore  = frameSemaphores[semaphoreIndex].ImageAcquiredSemaphore;
     VkSemaphore render_complete_semaphore = frameSemaphores[semaphoreIndex].RenderCompleteSemaphore;
+	
     err = vkAcquireNextImageKHR(device->GetVkDevice(), swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &windowFrameIndex);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
     {

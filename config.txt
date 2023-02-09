@@ -3,7 +3,6 @@
 ;-------------------
 
 [category]config
-
 [bool]dumpafterinit=false
 
 ;-------------------
@@ -23,6 +22,7 @@
 [stringvector]device.preferred=NVIDIA,Intel
 [stringvector]device.ignored=llvmpipe
 
+; Instance
 [bool]instance.validation=true
 [bool]instance.loginfo=true
 [bool]instance.loginfo.extensions=true
