@@ -70,6 +70,7 @@ private:
 		int					height;
 	    bool                clearEnable;
     	uint32_t            frameIndex;             // Current frame being rendered to (0 <= FrameIndex < FrameInFlightCount)
+		VkPresentModeKHR	presentMode;
 
 		WindowData()
 		{
@@ -79,6 +80,7 @@ private:
 			surface = VK_NULL_HANDLE;
 			clearEnable = true;
 			frameIndex = 0;
+			presentMode = (VkPresentModeKHR)~0;
 		}
 	};
 
@@ -99,7 +101,6 @@ private:
     VkPipelineCache          pipelineCache;
     VkDescriptorPool         descriptorPool;
     VkSwapchainKHR      	swapchain;
-    VkPresentModeKHR    	windowPresentMode;
     VkRenderPass        	renderPass;
     VkPipeline          	pipeline;               // The window pipeline may uses a different VkRenderPass than the one passed in ImGui_ImplVulkan_InitInfo
     uint32_t            	semaphoreIndex;         // Current set of swapchain wait semaphores we're using (needs to be distinct from per frame data)

@@ -55,7 +55,6 @@ Renderer::Renderer()
 	validation = false;
 
 	swapchain = VK_NULL_HANDLE;
-	windowPresentMode = (VkPresentModeKHR)~0;
 	renderPass = VK_NULL_HANDLE;
 	pipeline = VK_NULL_HANDLE;
 	semaphoreIndex = 0;
@@ -368,7 +367,7 @@ void Renderer::SetupVulkanWindow(int width, int height)
 	std::vector<VkPresentModeKHR> presentModes = { VK_PRESENT_MODE_FIFO_KHR };
 #endif
 
-    windowPresentMode = RendererUtils::FindBestPresentMode(physicalDevice->GetVkPhysicalDevice(), window.surface, presentModes);
+    window.presentMode = RendererUtils::FindBestPresentMode(physicalDevice->GetVkPhysicalDevice(), window.surface, presentModes);
 
     // Create SwapChain, RenderPass, Framebuffer, etc.
     assert(minImageCount >= 2);
@@ -419,11 +418,11 @@ void Renderer::CreateOrResizeWindow(uint32_t width, uint32_t height)
 	// If min image count was not specified, request different count of images dependent on selected present mode
 	if (minImageCount == 0)
 	{
-		if (windowPresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+		if (window.presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
 			minImageCount = 3;
-		if (windowPresentMode == VK_PRESENT_MODE_FIFO_KHR || windowPresentMode == VK_PRESENT_MODE_FIFO_RELAXED_KHR)
+		if (window.presentMode == VK_PRESENT_MODE_FIFO_KHR || window.presentMode == VK_PRESENT_MODE_FIFO_RELAXED_KHR)
 			minImageCount = 2;
-		if (windowPresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
+		if (window.presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
 			minImageCount = 1;
 	}
 
@@ -440,7 +439,7 @@ void Renderer::CreateOrResizeWindow(uint32_t width, uint32_t height)
 		info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;           // Assume that graphics family == present family
 		info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 		info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		info.presentMode = windowPresentMode;
+		info.presentMode = window.presentMode;
 		info.clipped = VK_TRUE;
 		info.oldSwapchain = old_swapchain;
 		VkSurfaceCapabilitiesKHR cap;
