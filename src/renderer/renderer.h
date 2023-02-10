@@ -32,13 +32,11 @@ public:
 	Renderer();
 	virtual ~Renderer();
 
-	// TODO: Setters, getters
-    VkClearValue        	clearValue;
-
 	void Initialise(SDL_Window* window);
 	void BeginFrame();
     void FramePresent();
 	void Cleanup();
+	void SetClearValue(float r, float g, float b, float a);
 
 	// Debug
 	void DrawVulkanDebugWindow();
@@ -63,34 +61,52 @@ private:
 		VkSemaphore         RenderCompleteSemaphore;
 	};
 
+	struct WindowData
+	{
+	    VkSurfaceKHR		surface;
+		VkSurfaceFormatKHR	surfaceFormat;
+		uint32_t 			imageCount;
+		int					width;
+		int					height;
+	    bool                clearEnable;
+    	uint32_t            frameIndex;             // Current frame being rendered to (0 <= FrameIndex < FrameInFlightCount)
+
+		WindowData()
+		{
+			imageCount = 0;
+			surfaceFormat = {};
+			width = height = 0;
+			surface = VK_NULL_HANDLE;
+			clearEnable = true;
+			frameIndex = 0;
+		}
+	};
+
+	WindowData 	window;
+
     VkAllocationCallbacks*   vkAllocatorCallbacks;
+
 	VulkanInstance*			instance;
+    VkClearValue        	clearValue;
 
 	// TODO: change to smart pointer ?
 	VulkanPhysicalDevice*		physicalDevice;
 	VulkanLogicalDevice* 		device;
 
-    uint32_t                 vkQueueGraphicsFamily;
-    VkQueue                  vkGraphicsQueue;
-    VkDebugReportCallbackEXT vkDebugReport;
-    VkPipelineCache          vkPipelineCache;
-    VkDescriptorPool         vkDescriptorPool;
+    uint32_t                 queueGraphicsFamilyIndex;
+    VkQueue                  graphicsQueue;
+    VkDebugReportCallbackEXT debugReportExtension;
+    VkPipelineCache          pipelineCache;
+    VkDescriptorPool         descriptorPool;
     VkSwapchainKHR      	swapchain;
-    VkSurfaceFormatKHR  	windowSurfaceFormat;
     VkPresentModeKHR    	windowPresentMode;
-    bool                	windowClearEnable;
-    uint32_t            	windowFrameIndex;             // Current frame being rendered to (0 <= FrameIndex < FrameInFlightCount)
     VkRenderPass        	renderPass;
     VkPipeline          	pipeline;               // The window pipeline may uses a different VkRenderPass than the one passed in ImGui_ImplVulkan_InitInfo
     uint32_t            	semaphoreIndex;         // Current set of swapchain wait semaphores we're using (needs to be distinct from per frame data)
-    FrameData*				frames;
-    FrameSemaphores*  		frameSemaphores;
+	std::vector<FrameData>	frames;
+	std::vector<FrameSemaphores> frameSemaphores;
     uint32_t				minImageCount;
-	uint32_t				windowImageCount;
     bool					swapChainRebuild;
-	int						windowWidth;
-	int						windowHeight;
-    VkSurfaceKHR			windowSurface;
 
 	SDL_Window* sdlWindow;
 	std::vector<VulkanPhysicalDevice*> physicalDevices;
@@ -112,9 +128,10 @@ private:
  * @param height 
  */
     void SetupVulkanWindow(int width, int height);
+	void CreateOrResizeWindow(uint32_t width, uint32_t height);
+
     void CleanupVulkan();
     void CleanupVulkanWindow();
-	void CreateOrResizeWindow(uint32_t width, uint32_t height);
 	void SetupDebugReportCallback();
 	void SetupPhysicalDevice();
 	void SetupQueueFamilies();
