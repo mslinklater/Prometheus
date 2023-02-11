@@ -1,4 +1,5 @@
 #include "vulkanphysicaldevice.h"
+#include "vulkanutils.h"
 #include "system/log.h"
 #include "system/config.h"
 #include "vulkan/vk_layer_utils.h"
@@ -81,7 +82,42 @@ void VulkanPhysicalDevice::DrawDebug()
 				ImGui::Text("OTHER");
 				break;
 		}
-		ImGui::Text("API Version %d.%d.%d.%d", VK_API_VERSION_VARIANT(properties.apiVersion),VK_API_VERSION_MAJOR(properties.apiVersion),VK_API_VERSION_MINOR(properties.apiVersion),VK_API_VERSION_PATCH(properties.apiVersion));
+
+		ImGui::Text("API Version %s", StringAPIVersion(properties.apiVersion).c_str());
+		ImGui::Text("Driver Version %s", StringAPIVersion(properties.driverVersion).c_str());
+		ImGui::Text("VendorID 0x%04x %s", properties.vendorID, VulkanUtils::VendorIDToString(properties.vendorID).c_str());
+		ImGui::Text("DeviceID 0x%04x", properties.deviceID);
+		if (ImGui::TreeNode("Limits"))
+		{
+			ImGui::Text("Buffer image granularity %lu", properties.limits.bufferImageGranularity);
+			ImGui::Text("Discrete queue priorities %u", properties.limits.discreteQueuePriorities);
+			ImGui::Text("Framebuffer color sample counts 0x%04x", properties.limits.framebufferColorSampleCounts);
+			ImGui::Text("Framebuffer depth sample counts 0x%04x", properties.limits.framebufferDepthSampleCounts);
+			ImGui::Text("Framebuffer no attachments sample counts 0x%04x", properties.limits.framebufferNoAttachmentsSampleCounts);
+			ImGui::Text("Framebuffer stencil sample counts 0x%04x", properties.limits.framebufferStencilSampleCounts);
+			ImGui::Text("Line width granularity %f", properties.limits.lineWidthGranularity);
+			ImGui::Text("Line width range %f-%f", properties.limits.lineWidthRange[0], properties.limits.lineWidthRange[1]);
+			ImGui::Text("Max bound descriptor sets %d", properties.limits.maxBoundDescriptorSets);
+			ImGui::Text("Max clip distances %d", properties.limits.maxClipDistances);
+			ImGui::Text("Max color attachments %d", properties.limits.maxColorAttachments);
+			ImGui::Text("Max combined clip and cull distances %d", properties.limits.maxCombinedClipAndCullDistances);
+			ImGui::Text("Max compute shared memory size %u", properties.limits.maxComputeSharedMemorySize);
+			ImGui::Text("Max compute workgroup count %u, %u, %u", properties.limits.maxComputeWorkGroupCount[0], properties.limits.maxComputeWorkGroupCount[1], properties.limits.maxComputeWorkGroupCount[2]);
+			ImGui::Text("Max compute workgroup invocations %u", properties.limits.maxComputeWorkGroupInvocations);
+			ImGui::Text("Max compute workgroup size %u, %u, %u", properties.limits.maxComputeWorkGroupSize[0], properties.limits.maxComputeWorkGroupSize[1], properties.limits.maxComputeWorkGroupSize[2]);
+			ImGui::Text("Max cull distances %d", properties.limits.maxCullDistances);
+			ImGui::Text("Max descriptor set input attachments %d", properties.limits.maxDescriptorSetInputAttachments);
+			ImGui::Text("Max descriptor set sampled images %d", properties.limits.maxDescriptorSetSampledImages);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Features"))
+		{
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Memory"))
+		{
+			ImGui::TreePop();
+		}
 		ImGui::TreePop();
 	}
 }

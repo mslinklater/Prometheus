@@ -1,9 +1,10 @@
 #include <vector>
+#include <string>
 #include <vulkan/vulkan.h>
 
 void CheckVkResult(VkResult err);
 
-namespace RendererUtils
+namespace VulkanUtils
 {
 	VkSurfaceFormatKHR FindBestSurfaceFormat(	VkPhysicalDevice device, 
 												std::vector<VkFormat>& requestedFormats,
@@ -14,4 +15,5 @@ namespace RendererUtils
 											VkSurfaceKHR surface, 
 											std::vector<VkPresentModeKHR>& requestedModes);
 
+	std::string VendorIDToString(uint32_t vendorID);
 }

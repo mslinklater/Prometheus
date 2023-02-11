@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <stdlib.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
@@ -10,7 +11,7 @@
 #include "vulkanlogicaldevice.h"
 
 #include "renderer.h"
-#include "rendererutils.h"
+#include "vulkanutils.h"
 
 #include "system/config.h"
 #include "system/log.h"
@@ -36,10 +37,37 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(	VkDebugReportFlagsEXT flags,
     return VK_FALSE;
 }
 
+#if 0
+void* VKAPI_CALL Allocation(void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope allocationScope)
+{
+	return aligned_alloc(size, alignment);
+}
+
+void* VKAPI_CALL Reallocation(void* pUserData, void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope allocationScope)
+{
+	return realloc(pOriginal, size);
+}
+
+void VKAPI_CALL Free(void* pUserData, void* pMemory)
+{
+	free(pMemory);
+}
+#endif
+
 Renderer::Renderer()
 : instance(nullptr)
 {
+#if 0
+	static VkAllocationCallbacks callbacks;
+	callbacks.pfnAllocation = Allocation;
+	callbacks.pfnReallocation = Reallocation;
+	callbacks.pfnFree = Free;
+	callbacks.pfnInternalAllocation = nullptr;
+	callbacks.pfnInternalFree = nullptr;
+#endif
+
 	vkAllocatorCallbacks = NULL;
+//	vkAllocatorCallbacks = &callbacks;
 
 	physicalDevice = nullptr;	// TODO: smart pointer ?
 	device = nullptr;	// TODO: smart pointer ?
@@ -353,7 +381,7 @@ void Renderer::SetupVulkanWindow(int width, int height)
 		VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_R8G8B8_UNORM
 	};
 
-	window.surfaceFormat = RendererUtils::FindBestSurfaceFormat(
+	window.surfaceFormat = VulkanUtils::FindBestSurfaceFormat(
 		physicalDevice->GetVkPhysicalDevice(),
 		requestSurfaceImageFormats, 
 		VK_COLORSPACE_SRGB_NONLINEAR_KHR,
@@ -367,7 +395,7 @@ void Renderer::SetupVulkanWindow(int width, int height)
 	std::vector<VkPresentModeKHR> presentModes = { VK_PRESENT_MODE_FIFO_KHR };
 #endif
 
-    window.presentMode = RendererUtils::FindBestPresentMode(physicalDevice->GetVkPhysicalDevice(), window.surface, presentModes);
+    window.presentMode = VulkanUtils::FindBestPresentMode(physicalDevice->GetVkPhysicalDevice(), window.surface, presentModes);
 
     // Create SwapChain, RenderPass, Framebuffer, etc.
     assert(minImageCount >= 2);

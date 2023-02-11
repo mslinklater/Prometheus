@@ -6,7 +6,7 @@
 #include <SDL2/SDL_vulkan.h>
 
 #include "vulkaninstance.h"
-#include "rendererutils.h"
+#include "vulkanutils.h"
 
 #include "system/log.h"
 #include "system/config.h"

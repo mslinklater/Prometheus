@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "rendererutils.h"
+#include "vulkanutils.h"
 
 void CheckVkResult(VkResult err)
 {
@@ -11,7 +11,7 @@ void CheckVkResult(VkResult err)
         abort();
 }
 
-namespace RendererUtils
+namespace VulkanUtils
 {
 
 VkSurfaceFormatKHR FindBestSurfaceFormat(VkPhysicalDevice device, std::vector<VkFormat>& requestedFormats, VkColorSpaceKHR requestedColorSpace,VkSurfaceKHR surface)
@@ -80,5 +80,20 @@ VkPresentModeKHR FindBestPresentMode(	VkPhysicalDevice device,
     return VK_PRESENT_MODE_FIFO_KHR; // Always available
 }
 
+std::string VendorIDToString(uint32_t vendorID)
+{
+	switch(vendorID)
+	{
+		case VK_VENDOR_ID_VIV:	return "viv"; break;
+		case VK_VENDOR_ID_VSI:	return "vsi"; break;
+		case VK_VENDOR_ID_KAZAN:	return "kazan"; break;
+		case VK_VENDOR_ID_CODEPLAY:	return "codeplay"; break;
+		case VK_VENDOR_ID_MESA:	return "mesa"; break;
+		case VK_VENDOR_ID_POCL:	return "pocl"; break;
+		case 0x8086: return "Intel"; break;
+	}
+	return "unknown";
 }
+
+}	// namespace
 
