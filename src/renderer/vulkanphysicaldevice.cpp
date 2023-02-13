@@ -140,6 +140,8 @@ void VulkanPhysicalDevice::DrawDebug()
 			ImGui::Text("Max image dimension cube %d", properties.limits.maxImageDimensionCube);
 			ImGui::Text("Max interpolation offset %d", properties.limits.maxInterpolationOffset);
 			ImGui::Text("Max memory allocation count %d", properties.limits.maxMemoryAllocationCount);
+			ImGui::Text("Max per stage descriptor input attachments %d", properties.limits.maxPerStageDescriptorInputAttachments);
+			ImGui::Text("Max image dimension 2D %d", properties.limits.maxImageDimension2D);
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("Features"))
