@@ -91,23 +91,55 @@ void VulkanPhysicalDevice::DrawDebug()
 		{
 			ImGui::Text("Buffer image granularity %lu", properties.limits.bufferImageGranularity);
 			ImGui::Text("Discrete queue priorities %u", properties.limits.discreteQueuePriorities);
-			ImGui::Text("Framebuffer color sample counts 0x%04x", properties.limits.framebufferColorSampleCounts);
-			ImGui::Text("Framebuffer depth sample counts 0x%04x", properties.limits.framebufferDepthSampleCounts);
-			ImGui::Text("Framebuffer no attachments sample counts 0x%04x", properties.limits.framebufferNoAttachmentsSampleCounts);
-			ImGui::Text("Framebuffer stencil sample counts 0x%04x", properties.limits.framebufferStencilSampleCounts);
+			if (ImGui::TreeNode("Framebuffer"))
+			{
+				ImGui::Text("Color sample counts 0x%04x", properties.limits.framebufferColorSampleCounts);
+				ImGui::Text("Depth sample counts 0x%04x", properties.limits.framebufferDepthSampleCounts);
+				ImGui::Text("No attachments sample counts 0x%04x", properties.limits.framebufferNoAttachmentsSampleCounts);
+				ImGui::Text("Stencil sample counts 0x%04x", properties.limits.framebufferStencilSampleCounts);
+				ImGui::TreePop();
+			}
 			ImGui::Text("Line width granularity %f", properties.limits.lineWidthGranularity);
 			ImGui::Text("Line width range %f-%f", properties.limits.lineWidthRange[0], properties.limits.lineWidthRange[1]);
 			ImGui::Text("Max bound descriptor sets %d", properties.limits.maxBoundDescriptorSets);
 			ImGui::Text("Max clip distances %d", properties.limits.maxClipDistances);
 			ImGui::Text("Max color attachments %d", properties.limits.maxColorAttachments);
 			ImGui::Text("Max combined clip and cull distances %d", properties.limits.maxCombinedClipAndCullDistances);
-			ImGui::Text("Max compute shared memory size %u", properties.limits.maxComputeSharedMemorySize);
-			ImGui::Text("Max compute workgroup count %u, %u, %u", properties.limits.maxComputeWorkGroupCount[0], properties.limits.maxComputeWorkGroupCount[1], properties.limits.maxComputeWorkGroupCount[2]);
-			ImGui::Text("Max compute workgroup invocations %u", properties.limits.maxComputeWorkGroupInvocations);
-			ImGui::Text("Max compute workgroup size %u, %u, %u", properties.limits.maxComputeWorkGroupSize[0], properties.limits.maxComputeWorkGroupSize[1], properties.limits.maxComputeWorkGroupSize[2]);
+			if (ImGui::TreeNode("Compute"))
+			{
+				ImGui::Text("Max shared memory size %u", properties.limits.maxComputeSharedMemorySize);
+				ImGui::Text("Max workgroup count %u, %u, %u", properties.limits.maxComputeWorkGroupCount[0], properties.limits.maxComputeWorkGroupCount[1], properties.limits.maxComputeWorkGroupCount[2]);
+				ImGui::Text("Max workgroup invocations %u", properties.limits.maxComputeWorkGroupInvocations);
+				ImGui::Text("Max workgroup size %u, %u, %u", properties.limits.maxComputeWorkGroupSize[0], properties.limits.maxComputeWorkGroupSize[1], properties.limits.maxComputeWorkGroupSize[2]);
+				ImGui::TreePop();
+			}
 			ImGui::Text("Max cull distances %d", properties.limits.maxCullDistances);
 			ImGui::Text("Max descriptor set input attachments %d", properties.limits.maxDescriptorSetInputAttachments);
 			ImGui::Text("Max descriptor set sampled images %d", properties.limits.maxDescriptorSetSampledImages);
+			ImGui::Text("Max descriptor set samplers %d", properties.limits.maxDescriptorSetSamplers);
+			ImGui::Text("Max descriptor set storage buffers %d", properties.limits.maxDescriptorSetStorageBuffers);
+			ImGui::Text("Max descriptor set uniform buffers %d", properties.limits.maxDescriptorSetUniformBuffers);
+			ImGui::Text("Max descriptor set uniform buffers dynamic %d", properties.limits.maxDescriptorSetUniformBuffersDynamic);
+			ImGui::Text("Max draw indexed index value %d", properties.limits.maxDrawIndexedIndexValue);
+			ImGui::Text("Max fragment combined output resources %d", properties.limits.maxFragmentCombinedOutputResources);
+			ImGui::Text("Max fragment dual src attachments %d", properties.limits.maxFragmentDualSrcAttachments);
+			ImGui::Text("Max fragment input components %d", properties.limits.maxFragmentInputComponents);
+			ImGui::Text("Max fragment output attachments %d", properties.limits.maxFragmentOutputAttachments);
+			ImGui::Text("Max framebuffer height %d", properties.limits.maxFramebufferHeight);
+			ImGui::Text("Max framebuffer layers %d", properties.limits.maxFramebufferLayers);
+			ImGui::Text("Max framebuffer width %d", properties.limits.maxFramebufferWidth);
+			ImGui::Text("Max geometry input components %d", properties.limits.maxGeometryInputComponents);
+			ImGui::Text("Max geometry output components %d", properties.limits.maxGeometryOutputComponents);
+			ImGui::Text("Max geometry output vertices %d", properties.limits.maxGeometryOutputVertices);
+			ImGui::Text("Max geometry shader invocations %d", properties.limits.maxGeometryShaderInvocations);
+			ImGui::Text("Max geometry total output components %d", properties.limits.maxGeometryTotalOutputComponents);
+			ImGui::Text("Max image array layers %d", properties.limits.maxImageArrayLayers);
+			ImGui::Text("Max image dimension 1D %d", properties.limits.maxImageDimension1D);
+			ImGui::Text("Max image dimension 2D %d", properties.limits.maxImageDimension2D);
+			ImGui::Text("Max image dimension 3D %d", properties.limits.maxImageDimension3D);
+			ImGui::Text("Max image dimension cube %d", properties.limits.maxImageDimensionCube);
+			ImGui::Text("Max interpolation offset %d", properties.limits.maxInterpolationOffset);
+			ImGui::Text("Max memory allocation count %d", properties.limits.maxMemoryAllocationCount);
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("Features"))
