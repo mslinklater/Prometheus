@@ -89,22 +89,22 @@ void VulkanPhysicalDevice::DrawDebug()
 		ImGui::Text("DeviceID 0x%04x", properties.deviceID);
 		if (ImGui::TreeNode("Limits"))
 		{
-			ImGui::Text("Buffer image granularity %lu", properties.limits.bufferImageGranularity);
-			ImGui::Text("Discrete queue priorities %u", properties.limits.discreteQueuePriorities);
-			if (ImGui::TreeNode("Framebuffer"))
+			if (ImGui::TreeNode("Descriptor Sets"))
 			{
-				ImGui::Text("Color sample counts 0x%04x", properties.limits.framebufferColorSampleCounts);
-				ImGui::Text("Depth sample counts 0x%04x", properties.limits.framebufferDepthSampleCounts);
-				ImGui::Text("No attachments sample counts 0x%04x", properties.limits.framebufferNoAttachmentsSampleCounts);
-				ImGui::Text("Stencil sample counts 0x%04x", properties.limits.framebufferStencilSampleCounts);
-				ImGui::TreePop();
+				ImGui::Text("Max bound descriptor sets %d", properties.limits.maxBoundDescriptorSets);
+				ImGui::Text("Max descriptor set input attachments %d", properties.limits.maxDescriptorSetInputAttachments);
+				ImGui::Text("Max descriptor set sampled images %d", properties.limits.maxDescriptorSetSampledImages);
+				ImGui::Text("Max descriptor set samplers %d", properties.limits.maxDescriptorSetSamplers);
+				ImGui::Text("Max descriptor set storage buffers %d", properties.limits.maxDescriptorSetStorageBuffers);
+				ImGui::Text("Max descriptor set uniform buffers %d", properties.limits.maxDescriptorSetUniformBuffers);
+				ImGui::Text("Max descriptor set uniform buffers dynamic %d", properties.limits.maxDescriptorSetUniformBuffersDynamic);
+				ImGui::Text("Max per stage descriptor input attachments %d", properties.limits.maxPerStageDescriptorInputAttachments);
+				ImGui::Text("Max per stage descriptor sampled images %d", properties.limits.maxPerStageDescriptorSampledImages);
+				ImGui::Text("Max per stage descriptor samplers %d", properties.limits.maxPerStageDescriptorSamplers);
+				ImGui::Text("Max per stage descriptor storage buffers %d", properties.limits.maxPerStageDescriptorStorageBuffers);
+				ImGui::Text("Max per stage descriptor storage images %d", properties.limits.maxPerStageDescriptorStorageImages);
+				ImGui::Text("Max per stage descriptor uniform buffers %d", properties.limits.maxPerStageDescriptorUniformBuffers);
 			}
-			ImGui::Text("Line width granularity %f", properties.limits.lineWidthGranularity);
-			ImGui::Text("Line width range %f-%f", properties.limits.lineWidthRange[0], properties.limits.lineWidthRange[1]);
-			ImGui::Text("Max bound descriptor sets %d", properties.limits.maxBoundDescriptorSets);
-			ImGui::Text("Max clip distances %d", properties.limits.maxClipDistances);
-			ImGui::Text("Max color attachments %d", properties.limits.maxColorAttachments);
-			ImGui::Text("Max combined clip and cull distances %d", properties.limits.maxCombinedClipAndCullDistances);
 			if (ImGui::TreeNode("Compute"))
 			{
 				ImGui::Text("Max shared memory size %u", properties.limits.maxComputeSharedMemorySize);
@@ -113,39 +113,75 @@ void VulkanPhysicalDevice::DrawDebug()
 				ImGui::Text("Max workgroup size %u, %u, %u", properties.limits.maxComputeWorkGroupSize[0], properties.limits.maxComputeWorkGroupSize[1], properties.limits.maxComputeWorkGroupSize[2]);
 				ImGui::TreePop();
 			}
+			if (ImGui::TreeNode("Fragment"))
+			{
+				ImGui::Text("Max fragment combined output resources %d", properties.limits.maxFragmentCombinedOutputResources);
+				ImGui::Text("Max fragment dual src attachments %d", properties.limits.maxFragmentDualSrcAttachments);
+				ImGui::Text("Max fragment input components %d", properties.limits.maxFragmentInputComponents);
+				ImGui::Text("Max fragment output attachments %d", properties.limits.maxFragmentOutputAttachments);
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Framebuffer"))
+			{
+				ImGui::Text("Max framebuffer height %d", properties.limits.maxFramebufferHeight);
+				ImGui::Text("Max framebuffer layers %d", properties.limits.maxFramebufferLayers);
+				ImGui::Text("Max framebuffer width %d", properties.limits.maxFramebufferWidth);
+				ImGui::Text("Color sample counts 0x%04x", properties.limits.framebufferColorSampleCounts);
+				ImGui::Text("Depth sample counts 0x%04x", properties.limits.framebufferDepthSampleCounts);
+				ImGui::Text("No attachments sample counts 0x%04x", properties.limits.framebufferNoAttachmentsSampleCounts);
+				ImGui::Text("Stencil sample counts 0x%04x", properties.limits.framebufferStencilSampleCounts);
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Geometry"))
+			{
+				ImGui::Text("Max geometry input components %d", properties.limits.maxGeometryInputComponents);
+				ImGui::Text("Max geometry output components %d", properties.limits.maxGeometryOutputComponents);
+				ImGui::Text("Max geometry output vertices %d", properties.limits.maxGeometryOutputVertices);
+				ImGui::Text("Max geometry shader invocations %d", properties.limits.maxGeometryShaderInvocations);
+				ImGui::Text("Max geometry total output components %d", properties.limits.maxGeometryTotalOutputComponents);
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Image"))
+			{
+				ImGui::Text("Max image array layers %d", properties.limits.maxImageArrayLayers);
+				ImGui::Text("Max image dimension 1D %d", properties.limits.maxImageDimension1D);
+				ImGui::Text("Max image dimension 2D %d", properties.limits.maxImageDimension2D);
+				ImGui::Text("Max image dimension 3D %d", properties.limits.maxImageDimension3D);
+				ImGui::Text("Max image dimension cube %d", properties.limits.maxImageDimensionCube);
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Tesselation"))
+			{
+				ImGui::Text("Max tesselation control per patch output components %d", properties.limits.maxTessellationControlPerPatchOutputComponents);
+				ImGui::Text("Max tesselation control per vertex input components %d", properties.limits.maxTessellationControlPerVertexInputComponents);
+				ImGui::Text("Max tesselation control per vertex output components %d", properties.limits.maxTessellationControlPerVertexOutputComponents);
+				ImGui::Text("Max tesselation control total output components %d", properties.limits.maxTessellationControlTotalOutputComponents);
+				ImGui::Text("Max tesselation evaluation input components 2D %d", properties.limits.maxTessellationEvaluationInputComponents);
+				ImGui::Text("Max tesselation evaluation output components 2D %d", properties.limits.maxTessellationEvaluationOutputComponents);
+				ImGui::Text("Max tesselation generation level %d", properties.limits.maxTessellationGenerationLevel);
+				ImGui::Text("Max tesselation patch size %d", properties.limits.maxTessellationPatchSize);
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Vertex"))
+			{
+				ImGui::Text("Max vertex input attribute offset %d", properties.limits.maxVertexInputAttributeOffset);
+				ImGui::Text("Max vertex input attributes %d", properties.limits.maxVertexInputAttributes);
+				ImGui::Text("Max vertex input bindings %d", properties.limits.maxVertexInputBindings);
+				ImGui::Text("Max vertex input binding stride %d", properties.limits.maxVertexInputBindingStride);
+				ImGui::Text("Max vertex output components %d", properties.limits.maxVertexOutputComponents);
+				ImGui::TreePop();
+			}
+			ImGui::Text("Buffer image granularity %lu", properties.limits.bufferImageGranularity);
+			ImGui::Text("Discrete queue priorities %u", properties.limits.discreteQueuePriorities);
+			ImGui::Text("Line width granularity %f", properties.limits.lineWidthGranularity);
+			ImGui::Text("Line width range %f-%f", properties.limits.lineWidthRange[0], properties.limits.lineWidthRange[1]);
+			ImGui::Text("Max clip distances %d", properties.limits.maxClipDistances);
+			ImGui::Text("Max color attachments %d", properties.limits.maxColorAttachments);
+			ImGui::Text("Max combined clip and cull distances %d", properties.limits.maxCombinedClipAndCullDistances);
 			ImGui::Text("Max cull distances %d", properties.limits.maxCullDistances);
-			ImGui::Text("Max descriptor set input attachments %d", properties.limits.maxDescriptorSetInputAttachments);
-			ImGui::Text("Max descriptor set sampled images %d", properties.limits.maxDescriptorSetSampledImages);
-			ImGui::Text("Max descriptor set samplers %d", properties.limits.maxDescriptorSetSamplers);
-			ImGui::Text("Max descriptor set storage buffers %d", properties.limits.maxDescriptorSetStorageBuffers);
-			ImGui::Text("Max descriptor set uniform buffers %d", properties.limits.maxDescriptorSetUniformBuffers);
-			ImGui::Text("Max descriptor set uniform buffers dynamic %d", properties.limits.maxDescriptorSetUniformBuffersDynamic);
 			ImGui::Text("Max draw indexed index value %d", properties.limits.maxDrawIndexedIndexValue);
-			ImGui::Text("Max fragment combined output resources %d", properties.limits.maxFragmentCombinedOutputResources);
-			ImGui::Text("Max fragment dual src attachments %d", properties.limits.maxFragmentDualSrcAttachments);
-			ImGui::Text("Max fragment input components %d", properties.limits.maxFragmentInputComponents);
-			ImGui::Text("Max fragment output attachments %d", properties.limits.maxFragmentOutputAttachments);
-			ImGui::Text("Max framebuffer height %d", properties.limits.maxFramebufferHeight);
-			ImGui::Text("Max framebuffer layers %d", properties.limits.maxFramebufferLayers);
-			ImGui::Text("Max framebuffer width %d", properties.limits.maxFramebufferWidth);
-			ImGui::Text("Max geometry input components %d", properties.limits.maxGeometryInputComponents);
-			ImGui::Text("Max geometry output components %d", properties.limits.maxGeometryOutputComponents);
-			ImGui::Text("Max geometry output vertices %d", properties.limits.maxGeometryOutputVertices);
-			ImGui::Text("Max geometry shader invocations %d", properties.limits.maxGeometryShaderInvocations);
-			ImGui::Text("Max geometry total output components %d", properties.limits.maxGeometryTotalOutputComponents);
-			ImGui::Text("Max image array layers %d", properties.limits.maxImageArrayLayers);
-			ImGui::Text("Max image dimension 1D %d", properties.limits.maxImageDimension1D);
-			ImGui::Text("Max image dimension 2D %d", properties.limits.maxImageDimension2D);
-			ImGui::Text("Max image dimension 3D %d", properties.limits.maxImageDimension3D);
-			ImGui::Text("Max image dimension cube %d", properties.limits.maxImageDimensionCube);
 			ImGui::Text("Max interpolation offset %f", properties.limits.maxInterpolationOffset);
 			ImGui::Text("Max memory allocation count %d", properties.limits.maxMemoryAllocationCount);
-			ImGui::Text("Max per stage descriptor input attachments %d", properties.limits.maxPerStageDescriptorInputAttachments);
-			ImGui::Text("Max per stage descriptor sampled images %d", properties.limits.maxPerStageDescriptorSampledImages);
-			ImGui::Text("Max per stage descriptor samplers %d", properties.limits.maxPerStageDescriptorSamplers);
-			ImGui::Text("Max per stage descriptor storage buffers %d", properties.limits.maxPerStageDescriptorStorageBuffers);
-			ImGui::Text("Max per stage descriptor storage images %d", properties.limits.maxPerStageDescriptorStorageImages);
-			ImGui::Text("Max per stage descriptor uniform buffers %d", properties.limits.maxPerStageDescriptorUniformBuffers);
 			ImGui::Text("Max per stage resources %d", properties.limits.maxPerStageResources);
 			ImGui::Text("Max push constants size %d", properties.limits.maxPushConstantsSize);
 			ImGui::Text("Max sample mask words %d", properties.limits.maxSampleMaskWords);
@@ -153,23 +189,10 @@ void VulkanPhysicalDevice::DrawDebug()
 			ImGui::Text("Max sampler anisotropy %f", properties.limits.maxSamplerAnisotropy);
 			ImGui::Text("Max sampler LOD bias %f", properties.limits.maxSamplerLodBias);
 			ImGui::Text("Max storage buffer range %d", properties.limits.maxStorageBufferRange);
-			ImGui::Text("Max tesselation control per patch output components %d", properties.limits.maxTessellationControlPerPatchOutputComponents);
-			ImGui::Text("Max tesselation control per vertex input components %d", properties.limits.maxTessellationControlPerVertexInputComponents);
-			ImGui::Text("Max tesselation control per vertex output components %d", properties.limits.maxTessellationControlPerVertexOutputComponents);
-			ImGui::Text("Max tesselation control total output components %d", properties.limits.maxTessellationControlTotalOutputComponents);
-			ImGui::Text("Max tesselation evaluation input components 2D %d", properties.limits.maxTessellationEvaluationInputComponents);
-			ImGui::Text("Max tesselation evaluation output components 2D %d", properties.limits.maxTessellationEvaluationOutputComponents);
-			ImGui::Text("Max tesselation generation level %d", properties.limits.maxTessellationGenerationLevel);
-			ImGui::Text("Max tesselation patch size %d", properties.limits.maxTessellationPatchSize);
 			ImGui::Text("Max texelbuffer elements %d", properties.limits.maxTexelBufferElements);
 			ImGui::Text("Max texel gather offset %d", properties.limits.maxTexelGatherOffset);
 			ImGui::Text("Max texel offset %d", properties.limits.maxTexelOffset);
 			ImGui::Text("Max uniform buffer range %d", properties.limits.maxUniformBufferRange);
-			ImGui::Text("Max vertex input attribute offset %d", properties.limits.maxVertexInputAttributeOffset);
-			ImGui::Text("Max vertex input attributes %d", properties.limits.maxVertexInputAttributes);
-			ImGui::Text("Max vertex input bindings %d", properties.limits.maxVertexInputBindings);
-			ImGui::Text("Max vertex input binding stride %d", properties.limits.maxVertexInputBindingStride);
-			ImGui::Text("Max vertex output components %d", properties.limits.maxVertexOutputComponents);
 			ImGui::Text("Max viewport dimensions %d, %d", properties.limits.maxViewportDimensions[0], properties.limits.maxViewportDimensions[1]);
 			ImGui::Text("Max viewports %d", properties.limits.maxViewports);
 			ImGui::Text("Min interpolation offset %f", properties.limits.minInterpolationOffset);
@@ -204,6 +227,55 @@ void VulkanPhysicalDevice::DrawDebug()
 		}
 		if (ImGui::TreeNode("Features"))
 		{
+			ImGui::Text("Alpha to one %s", features.alphaToOne ? "TRUE" : "FALSE");
+			ImGui::Text("Depth bias clamp %s", features.depthBiasClamp ? "TRUE" : "FALSE");
+			ImGui::Text("Depth bounds %s", features.depthBounds ? "TRUE" : "FALSE");
+			ImGui::Text("Depth clamp %s", features.depthClamp ? "TRUE" : "FALSE");
+			ImGui::Text("Draw indirect first instance %s", features.drawIndirectFirstInstance ? "TRUE" : "FALSE");
+			ImGui::Text("Dual src blend %s", features.dualSrcBlend ? "TRUE" : "FALSE");
+			ImGui::Text("Fill mode non solid %s", features.fillModeNonSolid ? "TRUE" : "FALSE");
+			ImGui::Text("Fragment stores and atomics %s", features.fragmentStoresAndAtomics ? "TRUE" : "FALSE");
+			ImGui::Text("Full draw index unit32 %s", features.fullDrawIndexUint32 ? "TRUE" : "FALSE");
+			ImGui::Text("Geometry shader %s", features.geometryShader ? "TRUE" : "FALSE");
+			ImGui::Text("Image cube array %s", features.imageCubeArray ? "TRUE" : "FALSE");
+			ImGui::Text("Independent blend %s", features.independentBlend ? "TRUE" : "FALSE");
+			ImGui::Text("Inherited queries %s", features.inheritedQueries ? "TRUE" : "FALSE");
+			ImGui::Text("Large points %s", features.largePoints ? "TRUE" : "FALSE");
+			ImGui::Text("Logic op %s", features.logicOp ? "TRUE" : "FALSE");
+			ImGui::Text("Multi draw indirect %s", features.multiDrawIndirect ? "TRUE" : "FALSE");
+			ImGui::Text("Multi viewport %s", features.multiViewport ? "TRUE" : "FALSE");
+			ImGui::Text("Occlusion query precise %s", features.occlusionQueryPrecise ? "TRUE" : "FALSE");
+			ImGui::Text("Pipeline statistics query %s", features.pipelineStatisticsQuery ? "TRUE" : "FALSE");
+			ImGui::Text("Robest buffer access %s", features.robustBufferAccess ? "TRUE" : "FALSE");
+			ImGui::Text("Sampler anisotropy %s", features.samplerAnisotropy ? "TRUE" : "FALSE");
+			ImGui::Text("Sample rate shading %s", features.sampleRateShading ? "TRUE" : "FALSE");
+			ImGui::Text("Shader clip distance %s", features.shaderClipDistance ? "TRUE" : "FALSE");
+			ImGui::Text("Shader cull distance %s", features.shaderClipDistance ? "TRUE" : "FALSE");
+			ImGui::Text("Shader float64 %s", features.shaderFloat64 ? "TRUE" : "FALSE");
+			ImGui::Text("Shader image gather extended %s", features.shaderImageGatherExtended ? "TRUE" : "FALSE");
+			ImGui::Text("Shader int 16 %s", features.shaderInt16 ? "TRUE" : "FALSE");
+			ImGui::Text("Shader int 64 %s", features.shaderInt64 ? "TRUE" : "FALSE");
+			ImGui::Text("Shader resource min LOD %s", features.shaderResourceMinLod ? "TRUE" : "FALSE");
+			ImGui::Text("Shader resource residency %s", features.shaderResourceResidency ? "TRUE" : "FALSE");
+			ImGui::Text("Shader sampled image array dynamic indexing %s", features.shaderSampledImageArrayDynamicIndexing ? "TRUE" : "FALSE");
+			ImGui::Text("Shader storage buffer array dynamic indexing %s", features.shaderStorageBufferArrayDynamicIndexing ? "TRUE" : "FALSE");
+			ImGui::Text("Shader storage image arrya dynamic indexing %s", features.shaderStorageImageArrayDynamicIndexing ? "TRUE" : "FALSE");
+			ImGui::Text("Shader storage image extended formats %s", features.shaderStorageImageExtendedFormats ? "TRUE" : "FALSE");
+			ImGui::Text("Shader storage image multisample %s", features.shaderStorageImageMultisample ? "TRUE" : "FALSE");
+			ImGui::Text("Shader storage image read without format %s", features.shaderStorageImageReadWithoutFormat ? "TRUE" : "FALSE");
+			ImGui::Text("Shader storage image write without format %s", features.shaderStorageImageWriteWithoutFormat ? "TRUE" : "FALSE");
+			ImGui::Text("Shader tessellation and geometry point size %s", features.shaderTessellationAndGeometryPointSize ? "TRUE" : "FALSE");
+			ImGui::Text("Shader uniform buffer array dynamic indexing %s", features.shaderUniformBufferArrayDynamicIndexing ? "TRUE" : "FALSE");
+			ImGui::Text("Sparse binding %s", features.sparseBinding ? "TRUE" : "FALSE");
+			ImGui::Text("Sparse residency 16 samples %s", features.sparseResidency16Samples ? "TRUE" : "FALSE");
+			ImGui::Text("Sparse residency 2 samples %s", features.sparseResidency2Samples ? "TRUE" : "FALSE");
+			ImGui::Text("Sparse residency 4 samples %s", features.sparseResidency4Samples ? "TRUE" : "FALSE");
+			ImGui::Text("Sparse residency 8 samples %s", features.sparseResidency8Samples ? "TRUE" : "FALSE");
+			ImGui::Text("Sparse residency aliased %s", features.sparseResidencyAliased ? "TRUE" : "FALSE");
+			ImGui::Text(" %s", features. ? "TRUE" : "FALSE");
+			ImGui::Text(" %s", features. ? "TRUE" : "FALSE");
+			ImGui::Text(" %s", features. ? "TRUE" : "FALSE");
+			ImGui::Text(" %s", features. ? "TRUE" : "FALSE");
 			
 			ImGui::TreePop();
 		}
