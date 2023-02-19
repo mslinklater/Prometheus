@@ -138,14 +138,73 @@ void VulkanPhysicalDevice::DrawDebug()
 			ImGui::Text("Max image dimension 2D %d", properties.limits.maxImageDimension2D);
 			ImGui::Text("Max image dimension 3D %d", properties.limits.maxImageDimension3D);
 			ImGui::Text("Max image dimension cube %d", properties.limits.maxImageDimensionCube);
-			ImGui::Text("Max interpolation offset %d", properties.limits.maxInterpolationOffset);
+			ImGui::Text("Max interpolation offset %f", properties.limits.maxInterpolationOffset);
 			ImGui::Text("Max memory allocation count %d", properties.limits.maxMemoryAllocationCount);
 			ImGui::Text("Max per stage descriptor input attachments %d", properties.limits.maxPerStageDescriptorInputAttachments);
-			ImGui::Text("Max image dimension 2D %d", properties.limits.maxImageDimension2D);
+			ImGui::Text("Max per stage descriptor sampled images %d", properties.limits.maxPerStageDescriptorSampledImages);
+			ImGui::Text("Max per stage descriptor samplers %d", properties.limits.maxPerStageDescriptorSamplers);
+			ImGui::Text("Max per stage descriptor storage buffers %d", properties.limits.maxPerStageDescriptorStorageBuffers);
+			ImGui::Text("Max per stage descriptor storage images %d", properties.limits.maxPerStageDescriptorStorageImages);
+			ImGui::Text("Max per stage descriptor uniform buffers %d", properties.limits.maxPerStageDescriptorUniformBuffers);
+			ImGui::Text("Max per stage resources %d", properties.limits.maxPerStageResources);
+			ImGui::Text("Max push constants size %d", properties.limits.maxPushConstantsSize);
+			ImGui::Text("Max sample mask words %d", properties.limits.maxSampleMaskWords);
+			ImGui::Text("Max sampler allocation count %d", properties.limits.maxSamplerAllocationCount);
+			ImGui::Text("Max sampler anisotropy %f", properties.limits.maxSamplerAnisotropy);
+			ImGui::Text("Max sampler LOD bias %f", properties.limits.maxSamplerLodBias);
+			ImGui::Text("Max storage buffer range %d", properties.limits.maxStorageBufferRange);
+			ImGui::Text("Max tesselation control per patch output components %d", properties.limits.maxTessellationControlPerPatchOutputComponents);
+			ImGui::Text("Max tesselation control per vertex input components %d", properties.limits.maxTessellationControlPerVertexInputComponents);
+			ImGui::Text("Max tesselation control per vertex output components %d", properties.limits.maxTessellationControlPerVertexOutputComponents);
+			ImGui::Text("Max tesselation control total output components %d", properties.limits.maxTessellationControlTotalOutputComponents);
+			ImGui::Text("Max tesselation evaluation input components 2D %d", properties.limits.maxTessellationEvaluationInputComponents);
+			ImGui::Text("Max tesselation evaluation output components 2D %d", properties.limits.maxTessellationEvaluationOutputComponents);
+			ImGui::Text("Max tesselation generation level %d", properties.limits.maxTessellationGenerationLevel);
+			ImGui::Text("Max tesselation patch size %d", properties.limits.maxTessellationPatchSize);
+			ImGui::Text("Max texelbuffer elements %d", properties.limits.maxTexelBufferElements);
+			ImGui::Text("Max texel gather offset %d", properties.limits.maxTexelGatherOffset);
+			ImGui::Text("Max texel offset %d", properties.limits.maxTexelOffset);
+			ImGui::Text("Max uniform buffer range %d", properties.limits.maxUniformBufferRange);
+			ImGui::Text("Max vertex input attribute offset %d", properties.limits.maxVertexInputAttributeOffset);
+			ImGui::Text("Max vertex input attributes %d", properties.limits.maxVertexInputAttributes);
+			ImGui::Text("Max vertex input bindings %d", properties.limits.maxVertexInputBindings);
+			ImGui::Text("Max vertex input binding stride %d", properties.limits.maxVertexInputBindingStride);
+			ImGui::Text("Max vertex output components %d", properties.limits.maxVertexOutputComponents);
+			ImGui::Text("Max viewport dimensions %d, %d", properties.limits.maxViewportDimensions[0], properties.limits.maxViewportDimensions[1]);
+			ImGui::Text("Max viewports %d", properties.limits.maxViewports);
+			ImGui::Text("Min interpolation offset %f", properties.limits.minInterpolationOffset);
+			ImGui::Text("Min memory map alignment %d", (int)properties.limits.minMemoryMapAlignment);
+			ImGui::Text("Min storage buffer offset alignment %lu", properties.limits.minStorageBufferOffsetAlignment);
+			ImGui::Text("Min texel buffer offset alignment %lu", properties.limits.minTexelBufferOffsetAlignment);
+			ImGui::Text("Min texel gather offset %d", properties.limits.minTexelGatherOffset);
+			ImGui::Text("Min texel offset %d", properties.limits.minTexelOffset);
+			ImGui::Text("Min uniform buffer offset alignment %lu", properties.limits.minUniformBufferOffsetAlignment);
+			ImGui::Text("Mipmap precision bits %d", properties.limits.mipmapPrecisionBits);
+			ImGui::Text("Non coherent atom size %lu", properties.limits.nonCoherentAtomSize);
+			ImGui::Text("Optimal buffer copy offset alignment %lu", properties.limits.optimalBufferCopyOffsetAlignment);
+			ImGui::Text("Optimal buffer copy row pitch alignment %lu", properties.limits.optimalBufferCopyRowPitchAlignment);
+			ImGui::Text("Point size granularoty %f", properties.limits.pointSizeGranularity);
+			ImGui::Text("Point size range %f, %f", properties.limits.pointSizeRange[0], properties.limits.pointSizeRange[1]);
+			ImGui::Text("Sampled image color saple counts %d", properties.limits.sampledImageColorSampleCounts);
+			ImGui::Text("Sampled image depth sample counts %d", properties.limits.sampledImageDepthSampleCounts);
+			ImGui::Text("Sampled image integer sample counts %d", properties.limits.sampledImageIntegerSampleCounts);
+			ImGui::Text("Sampled image stencil sample counts %d", properties.limits.sampledImageStencilSampleCounts);
+			ImGui::Text("Sparse address space size %lu", properties.limits.sparseAddressSpaceSize);
+			ImGui::Text("Standard sample locations %d", properties.limits.standardSampleLocations);
+			ImGui::Text("Storage image sample counts %d", properties.limits.storageImageSampleCounts);
+			ImGui::Text("Strict lines %d", properties.limits.strictLines);
+			ImGui::Text("Sub pixel interpolation offset bits %d", properties.limits.subPixelInterpolationOffsetBits);
+			ImGui::Text("Sub pixel precision bits %d", properties.limits.subPixelPrecisionBits);
+			ImGui::Text("Sub texel precision bits %d", properties.limits.subTexelPrecisionBits);
+			ImGui::Text("Timestamp compute and graphics %d", properties.limits.timestampComputeAndGraphics);
+			ImGui::Text("Timestamp period %f", properties.limits.timestampPeriod);
+			ImGui::Text("Viewport bounds range %f, %f", properties.limits.viewportBoundsRange[0], properties.limits.viewportBoundsRange[1]);
+			ImGui::Text("Viewport subpixel bits %d", properties.limits.viewportSubPixelBits);
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("Features"))
 		{
+			
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("Memory"))
