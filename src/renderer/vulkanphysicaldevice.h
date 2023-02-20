@@ -32,6 +32,7 @@ class VulkanPhysicalDevice
   private:
 	
     VkPhysicalDevice device;
+	// TODO: https://github.com/mslinklater/Prometheus/issues/22
     VkPhysicalDeviceProperties properties;
     VkPhysicalDeviceFeatures features;	
     VkPhysicalDeviceMemoryProperties memoryProperties;
