@@ -272,15 +272,86 @@ void VulkanPhysicalDevice::DrawDebug()
 			ImGui::Text("Sparse residency 4 samples %s", features.sparseResidency4Samples ? "TRUE" : "FALSE");
 			ImGui::Text("Sparse residency 8 samples %s", features.sparseResidency8Samples ? "TRUE" : "FALSE");
 			ImGui::Text("Sparse residency aliased %s", features.sparseResidencyAliased ? "TRUE" : "FALSE");
-			ImGui::Text(" %s", features. ? "TRUE" : "FALSE");
-			ImGui::Text(" %s", features. ? "TRUE" : "FALSE");
-			ImGui::Text(" %s", features. ? "TRUE" : "FALSE");
-			ImGui::Text(" %s", features. ? "TRUE" : "FALSE");
+			ImGui::Text("Sparse residency buffer %s", features.sparseResidencyBuffer ? "TRUE" : "FALSE");
+			ImGui::Text("Sparse residency image 2D %s", features.sparseResidencyImage2D ? "TRUE" : "FALSE");
+			ImGui::Text("Sparse residency image 3D %s", features.sparseResidencyImage3D ? "TRUE" : "FALSE");
+			ImGui::Text("Tesselation shader %s", features.tessellationShader ? "TRUE" : "FALSE");
+			ImGui::Text("Texture compression ASTC LDR %s", features.textureCompressionASTC_LDR ? "TRUE" : "FALSE");
+			ImGui::Text("Texture compression BC %s", features.textureCompressionBC ? "TRUE" : "FALSE");
+			ImGui::Text("Texture compression ETC2 %s", features.textureCompressionETC2 ? "TRUE" : "FALSE");
+			ImGui::Text("Variable multisample rate %s", features.variableMultisampleRate ? "TRUE" : "FALSE");
+			ImGui::Text("Vertex pipeline stores and atomics %s", features.vertexPipelineStoresAndAtomics ? "TRUE" : "FALSE");
+			ImGui::Text("Wide lines %s", features.wideLines ? "TRUE" : "FALSE");
 			
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("Memory"))
 		{
+			if (ImGui::TreeNode("Types"))
+			{
+				for(int i=0 ; i<memoryProperties.memoryTypeCount ; ++i)
+				{
+					char buffer[64];
+					sprintf(&buffer[0], "Heap %d", memoryProperties.memoryTypes[i].heapIndex);
+					if (ImGui::TreeNode(buffer))
+					{
+						if(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) { ImGui::Text("Device coherent AMD"); }
+						if(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) { ImGui::Text("Device local"); }
+						if(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD) { ImGui::Text("Device uncached AMD"); }
+						if(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) { ImGui::Text("Host cached"); }
+						if(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) { ImGui::Text("Host coherent"); }
+						if(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) { ImGui::Text("Host visible"); }
+						if(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) { ImGui::Text("Lazily allocated"); }
+						if(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) { ImGui::Text("Protected"); }
+						if(memoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV) { ImGui::Text("RDMA capable"); }
+						ImGui::TreePop();
+					}
+				}
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("Heaps"))
+			{
+				for(int i=0 ; i<memoryProperties.memoryHeapCount ; ++i)
+				{
+					char buffer[64];
+					sprintf(&buffer[0], "Heap %d", i);
+					if (ImGui::TreeNode(buffer))
+					{
+						ImGui::Text("Size %lu MB", memoryProperties.memoryHeaps[i].size / (1024 * 1024));
+						if(memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) { ImGui::Text("Device local"); }
+						if(memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) { ImGui::Text("Multi instance"); }
+						if(memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT_KHR) { ImGui::Text("Multi instance KHR"); }
+						ImGui::TreePop();
+					}
+				}
+				ImGui::TreePop();
+			}
+			
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Queues"))
+		{
+			int index = 0;
+			for(auto queue : queueFamilyProperties)
+			{
+				char buffer[64];
+				sprintf(&buffer[0], "Queue %d", index);
+				if (ImGui::TreeNode(buffer))
+				{
+					if(queue.queueFlags & VK_QUEUE_COMPUTE_BIT){ ImGui::Text("Compute");}
+					if(queue.queueFlags & VK_QUEUE_GRAPHICS_BIT){ ImGui::Text("Graphics");}
+					if(queue.queueFlags & VK_QUEUE_PROTECTED_BIT){ ImGui::Text("Protected");}
+					if(queue.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT){ ImGui::Text("Sparse binding");}
+					if(queue.queueFlags & VK_QUEUE_TRANSFER_BIT){ ImGui::Text("Transfer");}
+					ImGui::Text("Count %d", queue.queueCount);
+					ImGui::Text("Timestamp valid %d", queue.timestampValidBits);
+					ImGui::Text("Image transfer granularity width %d", queue.minImageTransferGranularity.width );
+					ImGui::Text("Image transfer granularity height %d", queue.minImageTransferGranularity.height );
+					ImGui::Text("Image transfer granularity depth %d", queue.minImageTransferGranularity.depth );
+					ImGui::TreePop();
+				}
+			}
 			ImGui::TreePop();
 		}
 		ImGui::TreePop();

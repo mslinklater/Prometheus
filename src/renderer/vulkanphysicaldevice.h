@@ -21,12 +21,9 @@ class VulkanPhysicalDevice
 
 	const std::string& GetName(){ return name; }
 
-	bool HasGraphicsQueue(){ return graphicsQueueIndex.has_value(); }
-    uint32_t GetGraphicsQueueFamilyIndex(){ return graphicsQueueIndex.value(); }
-	bool HasComputeQueue(){ return computeQueueIndex.has_value(); }
-    uint32_t GetComputeQueueFamilyIndex(){ return computeQueueIndex.value(); }
-	bool HasTransferQueue(){ return transferQueueIndex.has_value(); }
-    uint32_t GetTransferQueueFamilyIndex(){ return transferQueueIndex.value(); }
+	std::optional<uint32_t> const& GetGraphicsQueueIndex() const { return graphicsQueueIndex; }
+	std::optional<uint32_t> const& GetComputeQueueIndex() const { return graphicsQueueIndex; }
+	std::optional<uint32_t> const& GetTransferQueueIndex() const { return graphicsQueueIndex; }
 
 	bool IsDiscreetGPU();
 

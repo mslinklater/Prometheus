@@ -277,7 +277,9 @@ void Renderer::SetupPhysicalDevice()
 
 void Renderer::SetupQueueFamilies()
 {
-	queueGraphicsFamilyIndex = physicalDevice->GetGraphicsQueueFamilyIndex();
+	assert(physicalDevice->GetGraphicsQueueIndex().has_value());
+
+	queueGraphicsFamilyIndex = physicalDevice->GetGraphicsQueueIndex().value();
 }
 
 void Renderer::SetupLogicalDevice()
