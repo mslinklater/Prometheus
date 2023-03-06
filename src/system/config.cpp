@@ -43,15 +43,22 @@ void ParseCommandLine(int argc, char* argv[])
 
 void Initialise()
 {
-    std::string configPath("../config.txt");
+    // try to load from file
 
-    // load from file
+    FILE* hFile = fopen("../config.txt", "r");
 
-    FILE* hFile = fopen(configPath.c_str(), "r");
+	if(!hFile)
+	{
+		hFile = fopen("config.txt", "r");
+	}
+	if(!hFile)
+	{
+		hFile = fopen("config/config.txt", "r");
+	}
 
     if (hFile == nullptr)
     {
-        LOGFATALF("Config::Unable to open config file '%s' cwd:%s", configPath.c_str(), get_current_dir_name());
+        LOGFATALF("Config::Unable to find config file. cwd:%s", get_current_dir_name());
     }
     else
     {
