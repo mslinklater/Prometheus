@@ -34,3 +34,6 @@
 # Folders
 build
 docs/.ipynb_checkpoints
+
+# Local configuration
+imgui.ini
