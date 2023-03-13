@@ -27,11 +27,13 @@ int main(int argc, char** argv)
 
 	renderer->Initialise(window);
 
+	renderer->InitSample();
+
     // Our state
     bool show_demo_window = true;
     bool show_another_window = false;
 
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 0.00f);
 
     bool done = false;
     while (!done)
@@ -102,9 +104,14 @@ int main(int argc, char** argv)
         {
 			renderer->SetClearValue(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
             renderer->ImGuiRender(draw_data);
+
+			//renderer->DrawSample();
+
             renderer->FramePresent();
         }
     }
+
+	renderer->DestroySample();
 
 	renderer->Cleanup();
 

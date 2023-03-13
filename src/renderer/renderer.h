@@ -38,6 +38,12 @@ public:
 	void Cleanup();
 	void SetClearValue(float r, float g, float b, float a);
 
+	void InitSample();
+	void DrawSample();
+	void DestroySample();
+	std::vector<char> LoadShader(const std::string& filename);
+	VkShaderModule CreateShaderModule(const std::vector<char>& code);
+
 	// Debug
 	void DrawVulkanDebugWindow();
 
@@ -84,7 +90,31 @@ private:
 		}
 	};
 
+	struct SwapchainData
+	{
+	    VkSwapchainKHR      vkSwapchain;
+	    VkSwapchainKHR      oldVkSwapchain;
+// TODO: populate these properly
+//		VkSurfaceFormatKHR	surfaceFormat;
+//		int					width;
+//		int					height;
+	};
+
+	// Sample stuff
+
+	struct Sample
+	{
+		VkRenderPass		renderPass;
+		VkPipelineLayout	pipelineLayout;
+		VkPipeline			pipeline;
+	};
+
+	Sample sample;
+
+	//---
+
 	WindowData 	window;
+	SwapchainData swapchain;
 
     VkAllocationCallbacks*   vkAllocatorCallbacks;
 
@@ -100,7 +130,6 @@ private:
     VkDebugReportCallbackEXT debugReportExtension;
     VkPipelineCache          pipelineCache;
     VkDescriptorPool         descriptorPool;
-    VkSwapchainKHR      	swapchain;
     VkRenderPass        	renderPass;
     VkPipeline          	pipeline;               // The window pipeline may uses a different VkRenderPass than the one passed in ImGui_ImplVulkan_InitInfo
     uint32_t            	semaphoreIndex;         // Current set of swapchain wait semaphores we're using (needs to be distinct from per frame data)
