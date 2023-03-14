@@ -105,7 +105,7 @@ int main(int argc, char** argv)
 			renderer->SetClearValue(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
             renderer->ImGuiRender(draw_data);
 
-			//renderer->DrawSample();
+			renderer->DrawSample();
 
             renderer->FramePresent();
         }

@@ -237,8 +237,10 @@ void Renderer::ImGuiSetup()
 
 void Renderer::Cleanup()
 {
+	LOGINFO("Renderer::Cleanuo()");
     VkResult err = vkDeviceWaitIdle(device->GetVkDevice());
     CheckVkResult(err);
+	LOGINFO("ImGui_ImplVulkan_Shutdow()");
     ImGui_ImplVulkan_Shutdown();
     CleanupVulkanWindow();
     CleanupVulkan();
@@ -666,21 +668,22 @@ void Renderer::CreateOrResizeWindow(uint32_t width, uint32_t height)
 
 void Renderer::CleanupVulkan()
 {
+	LOGINFO("Renderer::CleanupVulkan()");
+
     vkDestroyDescriptorPool(device->GetVkDevice(), descriptorPool, vkAllocatorCallbacks);
 
     // Remove the debug report callback
-//    auto vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugReportCallbackEXT");
     auto vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance->GetVkInstance(), "vkDestroyDebugReportCallbackEXT");
-//    vkDestroyDebugReportCallbackEXT(vkInstance, vkDebugReport, vkAllocatorCallbacks);
     vkDestroyDebugReportCallbackEXT(instance->GetVkInstance(), debugReportExtension, vkAllocatorCallbacks);
 
     vkDestroyDevice(device->GetVkDevice(), vkAllocatorCallbacks);
-//    vkDestroyInstance(vkInstance, vkAllocatorCallbacks);
     vkDestroyInstance(instance->GetVkInstance(), vkAllocatorCallbacks);
 }
 
 void Renderer::CleanupVulkanWindow()
 {
+	LOGINFO("Renderer::CleanupVulkanWindow()");
+
     vkDeviceWaitIdle(device->GetVkDevice());
 
     for (uint32_t i = 0; i < window.imageCount; i++)
@@ -709,7 +712,6 @@ void Renderer::CleanupVulkanWindow()
     frameSemaphores.clear();
     vkDestroyPipeline(device->GetVkDevice(), pipeline, vkAllocatorCallbacks);
     vkDestroyRenderPass(device->GetVkDevice(), renderPass, vkAllocatorCallbacks);
-//    vkDestroySwapchainKHR(device->GetVkDevice(), swapchain, vkAllocatorCallbacks);
     vkDestroySwapchainKHR(device->GetVkDevice(), swapchain.vkSwapchain, vkAllocatorCallbacks);
     vkDestroySurfaceKHR(instance->GetVkInstance(), window.surface, vkAllocatorCallbacks);
 }
@@ -745,7 +747,6 @@ void Renderer::ImGuiRender(ImDrawData* draw_data)
     VkSemaphore image_acquired_semaphore  = frameSemaphores[semaphoreIndex].ImageAcquiredSemaphore;
     VkSemaphore render_complete_semaphore = frameSemaphores[semaphoreIndex].RenderCompleteSemaphore;
 	
-//    err = vkAcquireNextImageKHR(device->GetVkDevice(), swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &window.frameIndex);
     err = vkAcquireNextImageKHR(device->GetVkDevice(), swapchain.vkSwapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &window.frameIndex);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
     {
@@ -817,7 +818,6 @@ void Renderer::FramePresent()
     info.waitSemaphoreCount = 1;
     info.pWaitSemaphores = &render_complete_semaphore;
     info.swapchainCount = 1;
-//    info.pSwapchains = &swapchain;
     info.pSwapchains = &swapchain.vkSwapchain;
     info.pImageIndices = &window.frameIndex;
     VkResult err = vkQueuePresentKHR(graphicsQueue, &info);
@@ -920,10 +920,10 @@ void Renderer::InitSample()
 	vertShaderStageInfo.pName = "main";
 
 	VkPipelineShaderStageCreateInfo fragShaderStageInfo {};
-	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	vertShaderStageInfo.module = fragShaderModule;
-	vertShaderStageInfo.pName = "main";
+	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragShaderStageInfo.module = fragShaderModule;
+	fragShaderStageInfo.pName = "main";
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
@@ -1045,10 +1045,11 @@ void Renderer::InitSample()
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = &dynamicState;
 	pipelineInfo.layout = sample.pipelineLayout;
-	pipelineInfo.renderPass = renderPass;
+	pipelineInfo.renderPass = sample.renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.basePipelineIndex = -1;
+
 	if(vkCreateGraphicsPipelines(device->GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &sample.graphicsPipeline) != VK_SUCCESS)
 	{
 		LOGERROR("Pipeline creation failed");
@@ -1062,7 +1063,7 @@ void Renderer::InitSample()
 
 void Renderer::DrawSample()
 {
-#if 1
+#if 0
 	VkFramebuffer framebuffer = frames[window.frameIndex].Framebuffer;
 
 	VkCommandBuffer cmd = frames[window.frameIndex].CommandBuffer;
@@ -1168,11 +1169,15 @@ void Renderer::DrawSample()
 
 void Renderer::DestroySample()
 {
-	// destroy render pass
-	// destroy pipeline
+	LOGVERBOSE("Renderer::DestroySample()");
 
+	LOGVERBOSE("vkDestroyPipeline");
 	vkDestroyPipeline(device->GetVkDevice(), sample.graphicsPipeline, nullptr);
+
+	LOGVERBOSE("vkDestroyPipelineLayout");
 	vkDestroyPipelineLayout(device->GetVkDevice(), sample.pipelineLayout, nullptr);
-	vkDestroyRenderPass(device->GetVkDevice(), renderPass, nullptr);
+
+	LOGVERBOSE("vkDestroyRenderPass");
+	vkDestroyRenderPass(device->GetVkDevice(), sample.renderPass, nullptr);
 }
 
