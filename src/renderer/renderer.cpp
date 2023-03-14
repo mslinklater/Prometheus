@@ -1033,6 +1033,26 @@ void Renderer::InitSample()
 	// Now finally create the actual graphics pipeline...
 
 	VkGraphicsPipelineCreateInfo pipelineInfo {};
+	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.stageCount = 2;
+	pipelineInfo.pStages = shaderStages;
+	pipelineInfo.pVertexInputState = &vertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &inputAssembly;
+	pipelineInfo.pViewportState = &viewportState;
+	pipelineInfo.pRasterizationState = &rasterizer;
+	pipelineInfo.pMultisampleState = &multisampling;
+	pipelineInfo.pDepthStencilState = nullptr;
+	pipelineInfo.pColorBlendState = &colorBlending;
+	pipelineInfo.pDynamicState = &dynamicState;
+	pipelineInfo.layout = sample.pipelineLayout;
+	pipelineInfo.renderPass = renderPass;
+	pipelineInfo.subpass = 0;
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+	pipelineInfo.basePipelineIndex = -1;
+	if(vkCreateGraphicsPipelines(device->GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &sample.graphicsPipeline) != VK_SUCCESS)
+	{
+		LOGERROR("Pipeline creation failed");
+	}
 
 	//---------------------------------
 	// Cleanup...
@@ -1151,6 +1171,7 @@ void Renderer::DestroySample()
 	// destroy render pass
 	// destroy pipeline
 
+	vkDestroyPipeline(device->GetVkDevice(), sample.graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(device->GetVkDevice(), sample.pipelineLayout, nullptr);
 	vkDestroyRenderPass(device->GetVkDevice(), renderPass, nullptr);
 }

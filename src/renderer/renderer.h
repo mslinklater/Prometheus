@@ -106,7 +106,7 @@ private:
 	{
 		VkRenderPass		renderPass;
 		VkPipelineLayout	pipelineLayout;
-		VkPipeline			pipeline;
+		VkPipeline			graphicsPipeline;
 	};
 
 	Sample sample;
