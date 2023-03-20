@@ -55,7 +55,7 @@ private:
 	{
 		VkCommandPool       CommandPool;
 		VkCommandBuffer     CommandBuffer;
-		VkFence             Fence;
+		VkFence             QueueSubmitFence;
 		VkImage             Backbuffer;
 		VkImageView         BackbufferView;
 		VkFramebuffer       Framebuffer;

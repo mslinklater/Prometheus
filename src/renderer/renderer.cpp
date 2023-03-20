@@ -440,10 +440,10 @@ void Renderer::CreateOrResizeWindow(uint32_t width, uint32_t height)
 	for (uint32_t iImage = 0; iImage < window.imageCount; iImage++)
 	{
 		FrameData* fd = &frames[iImage];
-		vkDestroyFence(device->GetVkDevice(), fd->Fence, vkAllocatorCallbacks);
+		vkDestroyFence(device->GetVkDevice(), fd->QueueSubmitFence, vkAllocatorCallbacks);
 		vkFreeCommandBuffers(device->GetVkDevice(), fd->CommandPool, 1, &fd->CommandBuffer);
 		vkDestroyCommandPool(device->GetVkDevice(), fd->CommandPool, vkAllocatorCallbacks);
-		fd->Fence = VK_NULL_HANDLE;
+		fd->QueueSubmitFence = VK_NULL_HANDLE;
 		fd->CommandBuffer = VK_NULL_HANDLE;
 		fd->CommandPool = VK_NULL_HANDLE;
 
@@ -652,7 +652,7 @@ void Renderer::CreateOrResizeWindow(uint32_t width, uint32_t height)
 			VkFenceCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 			info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-			err = vkCreateFence(device->GetVkDevice(), &info, vkAllocatorCallbacks, &fd->Fence);
+			err = vkCreateFence(device->GetVkDevice(), &info, vkAllocatorCallbacks, &fd->QueueSubmitFence);
 			CheckVkResult(err);
 		}
 		{
@@ -690,10 +690,10 @@ void Renderer::CleanupVulkanWindow()
     {
 		FrameData* fd = &frames[i];
 		{
-			vkDestroyFence(device->GetVkDevice(), fd->Fence, vkAllocatorCallbacks);
+			vkDestroyFence(device->GetVkDevice(), fd->QueueSubmitFence, vkAllocatorCallbacks);
 			vkFreeCommandBuffers(device->GetVkDevice(), fd->CommandPool, 1, &fd->CommandBuffer);
 			vkDestroyCommandPool(device->GetVkDevice(), fd->CommandPool, vkAllocatorCallbacks);
-			fd->Fence = VK_NULL_HANDLE;
+			fd->QueueSubmitFence = VK_NULL_HANDLE;
 			fd->CommandBuffer = VK_NULL_HANDLE;
 			fd->CommandPool = VK_NULL_HANDLE;
 
@@ -737,6 +737,8 @@ void Renderer::BeginFrame()
 	// Start the Dear ImGui frame
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplSDL2_NewFrame();
+
+	// begin frame Vulkan setup
 }
 
 
@@ -757,15 +759,16 @@ void Renderer::ImGuiRender(ImDrawData* draw_data)
 
     FrameData* fd = &frames[window.frameIndex];
     {
-        err = vkWaitForFences(device->GetVkDevice(), 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
+        err = vkWaitForFences(device->GetVkDevice(), 1, &fd->QueueSubmitFence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
         CheckVkResult(err);
 
-        err = vkResetFences(device->GetVkDevice(), 1, &fd->Fence);
+        err = vkResetFences(device->GetVkDevice(), 1, &fd->QueueSubmitFence);
         CheckVkResult(err);
     }
     {
         err = vkResetCommandPool(device->GetVkDevice(), fd->CommandPool, 0);
         CheckVkResult(err);
+
         VkCommandBufferBeginInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -803,7 +806,7 @@ void Renderer::ImGuiRender(ImDrawData* draw_data)
 
         err = vkEndCommandBuffer(fd->CommandBuffer);
         CheckVkResult(err);
-        err = vkQueueSubmit(graphicsQueue, 1, &info, fd->Fence);
+        err = vkQueueSubmit(graphicsQueue, 1, &info, fd->QueueSubmitFence);
         CheckVkResult(err);
     }
 }
@@ -1063,15 +1066,26 @@ void Renderer::InitSample()
 
 void Renderer::DrawSample()
 {
-#if 0
+#if 1
+	VkResult err;
+
 	VkFramebuffer framebuffer = frames[window.frameIndex].Framebuffer;
 
 	VkCommandBuffer cmd = frames[window.frameIndex].CommandBuffer;
 
+    FrameData* fd = &frames[window.frameIndex];
+    {
+        err = vkWaitForFences(device->GetVkDevice(), 1, &fd->QueueSubmitFence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
+        CheckVkResult(err);
+
+        err = vkResetFences(device->GetVkDevice(), 1, &fd->QueueSubmitFence);
+        CheckVkResult(err);
+    }
+
 	// Begin command recording
 	VkCommandBufferBeginInfo begin_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
 	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	VkResult err = vkBeginCommandBuffer(cmd, &begin_info);
+	err = vkBeginCommandBuffer(cmd, &begin_info);
     CheckVkResult(err);
 
 	err = vkEndCommandBuffer(cmd);
@@ -1086,10 +1100,11 @@ void Renderer::DrawSample()
 	info.signalSemaphoreCount = 0;
 	info.pSignalSemaphores    = nullptr;
 	// Submit command buffer to graphics queue
-	err = vkQueueSubmit(graphicsQueue, 1, &info, VK_NULL_HANDLE);
+	err = vkQueueSubmit(graphicsQueue, 1, &info, fd->QueueSubmitFence);
     CheckVkResult(err);
 #endif
 
+// the original sample code...
 #if 0
 	// Render to this framebuffer.
 	VkFramebuffer framebuffer = context.swapchain_framebuffers[swapchain_index];
