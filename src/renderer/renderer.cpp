@@ -34,7 +34,21 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(	VkDebugReportFlagsEXT flags,
 	(void)messageCode; 
 	(void)pUserData; 
 	(void)pLayerPrefix; // Unused arguments
-	LOGERRORF("[vulkan] Debug report from ObjectType: %i Message: %s", objectType, pMessage);
+
+	std::string strMessage = pMessage;
+	bool isError = strMessage.find("Validation Error:") != std::string::npos;
+
+	std::string objectTypeStr = VulkanUtils::ValidationObjectTypeToString(objectType);
+
+	if(isError)
+	{
+		LOGERRORF("[vulkan]\nDebug report from %s Message: %s", objectTypeStr.c_str(), pMessage);
+	}
+	else
+	{
+		LOGWARNINGF("[vulkan]\nDebug report from %s Message: %s", objectTypeStr.c_str(), pMessage);
+	}
+
     return VK_FALSE;
 }
 
@@ -887,7 +901,8 @@ void Renderer::InitSample()
 	VkAttachmentDescription colorAttachment {};
 	colorAttachment.format = window.surfaceFormat.format;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+//	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -1082,11 +1097,28 @@ void Renderer::DrawSample()
         CheckVkResult(err);
     }
 
-	// Begin command recording
+	//---------------------------------------------
+	// Begin command buffer
+
 	VkCommandBufferBeginInfo begin_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
 	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 	err = vkBeginCommandBuffer(cmd, &begin_info);
     CheckVkResult(err);
+
+	// Begin the render pass.
+	VkRenderPassBeginInfo rp_begin{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+	rp_begin.renderPass               = sample.renderPass;
+	rp_begin.framebuffer              = framebuffer;
+	rp_begin.renderArea.extent.width  = window.width;
+	rp_begin.renderArea.extent.height = window.height;
+	rp_begin.clearValueCount          = 0;
+	// We will add draw commands in the same command buffer.
+	vkCmdBeginRenderPass(cmd, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdEndRenderPass(cmd);
+
+	//---------------------------------------------
+	// End command buffer
 
 	err = vkEndCommandBuffer(cmd);
     CheckVkResult(err);

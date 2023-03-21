@@ -16,4 +16,6 @@ namespace VulkanUtils
 											std::vector<VkPresentModeKHR>& requestedModes);
 
 	std::string VendorIDToString(uint32_t vendorID);
+
+	std::string ValidationObjectTypeToString(uint32_t objectType);
 }

@@ -95,5 +95,16 @@ std::string VendorIDToString(uint32_t vendorID)
 	return "unknown";
 }
 
+std::string ValidationObjectTypeToString(uint32_t objectType)
+{
+	switch(objectType)
+	{
+		case VK_OBJECT_TYPE_RENDER_PASS:
+			return "RENDER PASS";
+		default:
+			return std::to_string(objectType);
+	}
+}
+
 }	// namespace
 
