@@ -46,14 +46,26 @@ void VulkanPhysicalDevice::SetVkPhysicalDevice(VkPhysicalDevice deviceIn)
 	{
 		if(queueFamilyProperties[iQueue].queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
+			if(graphicsQueueIndex.has_value())
+			{
+				LOGWARNING("Found multiple graphics queues - https://github.com/mslinklater/Prometheus/issues/21");
+			}
 	        graphicsQueueIndex = iQueue;
         }
 		if(queueFamilyProperties[iQueue].queueFlags & VK_QUEUE_COMPUTE_BIT)
 		{
+			if(computeQueueIndex.has_value())
+			{
+				LOGWARNING("Found multiple compute queues - https://github.com/mslinklater/Prometheus/issues/21");
+			}
 	        computeQueueIndex = iQueue;
         }
 		if(queueFamilyProperties[iQueue].queueFlags & VK_QUEUE_TRANSFER_BIT)
 		{
+			if(transferQueueIndex.has_value())
+			{
+				LOGWARNING("Found multiple transfer queues - https://github.com/mslinklater/Prometheus/issues/21");
+			}
 	        transferQueueIndex = iQueue;
         }
 	}
