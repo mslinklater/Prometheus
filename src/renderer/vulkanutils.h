@@ -18,4 +18,14 @@ namespace VulkanUtils
 	std::string VendorIDToString(uint32_t vendorID);
 
 	std::string ValidationObjectTypeToString(uint32_t objectType);
+
+	VKAPI_ATTR VkBool32 VKAPI_CALL ValidationReport(	VkDebugReportFlagsEXT flags, 
+													VkDebugReportObjectTypeEXT objectType, 
+													uint64_t object, 
+													size_t location, 
+													int32_t messageCode, 
+													const char* pLayerPrefix, 
+													const char* pMessage, 
+													void* pUserData);
+
 }

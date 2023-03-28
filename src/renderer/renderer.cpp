@@ -19,7 +19,8 @@
 
 #include "backends/imgui_impl_vulkan.h"
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(	VkDebugReportFlagsEXT flags, 
+#if 0
+static VKAPI_ATTR VkBool32 VKAPI_CALL ValidationReport(	VkDebugReportFlagsEXT flags, 
 													VkDebugReportObjectTypeEXT objectType, 
 													uint64_t object, 
 													size_t location, 
@@ -51,6 +52,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(	VkDebugReportFlagsEXT flags,
 
     return VK_FALSE;
 }
+#endif
 
 #if 0
 void* VKAPI_CALL Allocation(void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope allocationScope)
@@ -269,7 +271,7 @@ void Renderer::SetupDebugReportCallback()
     VkDebugReportCallbackCreateInfoEXT debug_report_ci = {};
     debug_report_ci.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
     debug_report_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-    debug_report_ci.pfnCallback = debug_report;
+    debug_report_ci.pfnCallback = VulkanUtils::ValidationReport;
     debug_report_ci.pUserData = NULL;
 	VkResult err = vkCreateDebugReportCallbackEXT(instance->GetVkInstance(), &debug_report_ci, vkAllocatorCallbacks, &debugReportExtension);
     CheckVkResult(err);
