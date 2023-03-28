@@ -19,7 +19,8 @@
 
 #include "backends/imgui_impl_vulkan.h"
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(	VkDebugReportFlagsEXT flags, 
+#if 0
+static VKAPI_ATTR VkBool32 VKAPI_CALL ValidationReport(	VkDebugReportFlagsEXT flags, 
 													VkDebugReportObjectTypeEXT objectType, 
 													uint64_t object, 
 													size_t location, 
@@ -34,9 +35,24 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(	VkDebugReportFlagsEXT flags,
 	(void)messageCode; 
 	(void)pUserData; 
 	(void)pLayerPrefix; // Unused arguments
-	LOGERRORF("[vulkan] Debug report from ObjectType: %i Message: %s", objectType, pMessage);
+
+	std::string strMessage = pMessage;
+	bool isError = strMessage.find("Validation Error:") != std::string::npos;
+
+	std::string objectTypeStr = VulkanUtils::ValidationObjectTypeToString(objectType);
+
+	if(isError)
+	{
+		LOGERRORF("[vulkan]\nDebug report from %s Message: %s", objectTypeStr.c_str(), pMessage);
+	}
+	else
+	{
+		LOGWARNINGF("[vulkan]\nDebug report from %s Message: %s", objectTypeStr.c_str(), pMessage);
+	}
+
     return VK_FALSE;
 }
+#endif
 
 #if 0
 void* VKAPI_CALL Allocation(void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope allocationScope)
@@ -237,8 +253,10 @@ void Renderer::ImGuiSetup()
 
 void Renderer::Cleanup()
 {
+	LOGINFO("Renderer::Cleanuo()");
     VkResult err = vkDeviceWaitIdle(device->GetVkDevice());
     CheckVkResult(err);
+	LOGINFO("ImGui_ImplVulkan_Shutdow()");
     ImGui_ImplVulkan_Shutdown();
     CleanupVulkanWindow();
     CleanupVulkan();
@@ -253,7 +271,7 @@ void Renderer::SetupDebugReportCallback()
     VkDebugReportCallbackCreateInfoEXT debug_report_ci = {};
     debug_report_ci.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
     debug_report_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-    debug_report_ci.pfnCallback = debug_report;
+    debug_report_ci.pfnCallback = VulkanUtils::ValidationReport;
     debug_report_ci.pUserData = NULL;
 	VkResult err = vkCreateDebugReportCallbackEXT(instance->GetVkInstance(), &debug_report_ci, vkAllocatorCallbacks, &debugReportExtension);
     CheckVkResult(err);
@@ -438,10 +456,10 @@ void Renderer::CreateOrResizeWindow(uint32_t width, uint32_t height)
 	for (uint32_t iImage = 0; iImage < window.imageCount; iImage++)
 	{
 		FrameData* fd = &frames[iImage];
-		vkDestroyFence(device->GetVkDevice(), fd->Fence, vkAllocatorCallbacks);
+		vkDestroyFence(device->GetVkDevice(), fd->QueueSubmitFence, vkAllocatorCallbacks);
 		vkFreeCommandBuffers(device->GetVkDevice(), fd->CommandPool, 1, &fd->CommandBuffer);
 		vkDestroyCommandPool(device->GetVkDevice(), fd->CommandPool, vkAllocatorCallbacks);
-		fd->Fence = VK_NULL_HANDLE;
+		fd->QueueSubmitFence = VK_NULL_HANDLE;
 		fd->CommandBuffer = VK_NULL_HANDLE;
 		fd->CommandPool = VK_NULL_HANDLE;
 
@@ -650,7 +668,7 @@ void Renderer::CreateOrResizeWindow(uint32_t width, uint32_t height)
 			VkFenceCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 			info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-			err = vkCreateFence(device->GetVkDevice(), &info, vkAllocatorCallbacks, &fd->Fence);
+			err = vkCreateFence(device->GetVkDevice(), &info, vkAllocatorCallbacks, &fd->QueueSubmitFence);
 			CheckVkResult(err);
 		}
 		{
@@ -666,31 +684,32 @@ void Renderer::CreateOrResizeWindow(uint32_t width, uint32_t height)
 
 void Renderer::CleanupVulkan()
 {
+	LOGINFO("Renderer::CleanupVulkan()");
+
     vkDestroyDescriptorPool(device->GetVkDevice(), descriptorPool, vkAllocatorCallbacks);
 
     // Remove the debug report callback
-//    auto vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugReportCallbackEXT");
     auto vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance->GetVkInstance(), "vkDestroyDebugReportCallbackEXT");
-//    vkDestroyDebugReportCallbackEXT(vkInstance, vkDebugReport, vkAllocatorCallbacks);
     vkDestroyDebugReportCallbackEXT(instance->GetVkInstance(), debugReportExtension, vkAllocatorCallbacks);
 
     vkDestroyDevice(device->GetVkDevice(), vkAllocatorCallbacks);
-//    vkDestroyInstance(vkInstance, vkAllocatorCallbacks);
     vkDestroyInstance(instance->GetVkInstance(), vkAllocatorCallbacks);
 }
 
 void Renderer::CleanupVulkanWindow()
 {
+	LOGINFO("Renderer::CleanupVulkanWindow()");
+
     vkDeviceWaitIdle(device->GetVkDevice());
 
     for (uint32_t i = 0; i < window.imageCount; i++)
     {
 		FrameData* fd = &frames[i];
 		{
-			vkDestroyFence(device->GetVkDevice(), fd->Fence, vkAllocatorCallbacks);
+			vkDestroyFence(device->GetVkDevice(), fd->QueueSubmitFence, vkAllocatorCallbacks);
 			vkFreeCommandBuffers(device->GetVkDevice(), fd->CommandPool, 1, &fd->CommandBuffer);
 			vkDestroyCommandPool(device->GetVkDevice(), fd->CommandPool, vkAllocatorCallbacks);
-			fd->Fence = VK_NULL_HANDLE;
+			fd->QueueSubmitFence = VK_NULL_HANDLE;
 			fd->CommandBuffer = VK_NULL_HANDLE;
 			fd->CommandPool = VK_NULL_HANDLE;
 
@@ -709,7 +728,6 @@ void Renderer::CleanupVulkanWindow()
     frameSemaphores.clear();
     vkDestroyPipeline(device->GetVkDevice(), pipeline, vkAllocatorCallbacks);
     vkDestroyRenderPass(device->GetVkDevice(), renderPass, vkAllocatorCallbacks);
-//    vkDestroySwapchainKHR(device->GetVkDevice(), swapchain, vkAllocatorCallbacks);
     vkDestroySwapchainKHR(device->GetVkDevice(), swapchain.vkSwapchain, vkAllocatorCallbacks);
     vkDestroySurfaceKHR(instance->GetVkInstance(), window.surface, vkAllocatorCallbacks);
 }
@@ -735,6 +753,8 @@ void Renderer::BeginFrame()
 	// Start the Dear ImGui frame
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplSDL2_NewFrame();
+
+	// begin frame Vulkan setup
 }
 
 
@@ -745,7 +765,6 @@ void Renderer::ImGuiRender(ImDrawData* draw_data)
     VkSemaphore image_acquired_semaphore  = frameSemaphores[semaphoreIndex].ImageAcquiredSemaphore;
     VkSemaphore render_complete_semaphore = frameSemaphores[semaphoreIndex].RenderCompleteSemaphore;
 	
-//    err = vkAcquireNextImageKHR(device->GetVkDevice(), swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &window.frameIndex);
     err = vkAcquireNextImageKHR(device->GetVkDevice(), swapchain.vkSwapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &window.frameIndex);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
     {
@@ -756,15 +775,16 @@ void Renderer::ImGuiRender(ImDrawData* draw_data)
 
     FrameData* fd = &frames[window.frameIndex];
     {
-        err = vkWaitForFences(device->GetVkDevice(), 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
+        err = vkWaitForFences(device->GetVkDevice(), 1, &fd->QueueSubmitFence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
         CheckVkResult(err);
 
-        err = vkResetFences(device->GetVkDevice(), 1, &fd->Fence);
+        err = vkResetFences(device->GetVkDevice(), 1, &fd->QueueSubmitFence);
         CheckVkResult(err);
     }
     {
         err = vkResetCommandPool(device->GetVkDevice(), fd->CommandPool, 0);
         CheckVkResult(err);
+
         VkCommandBufferBeginInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -802,7 +822,7 @@ void Renderer::ImGuiRender(ImDrawData* draw_data)
 
         err = vkEndCommandBuffer(fd->CommandBuffer);
         CheckVkResult(err);
-        err = vkQueueSubmit(graphicsQueue, 1, &info, fd->Fence);
+        err = vkQueueSubmit(graphicsQueue, 1, &info, fd->QueueSubmitFence);
         CheckVkResult(err);
     }
 }
@@ -817,7 +837,6 @@ void Renderer::FramePresent()
     info.waitSemaphoreCount = 1;
     info.pWaitSemaphores = &render_complete_semaphore;
     info.swapchainCount = 1;
-//    info.pSwapchains = &swapchain;
     info.pSwapchains = &swapchain.vkSwapchain;
     info.pImageIndices = &window.frameIndex;
     VkResult err = vkQueuePresentKHR(graphicsQueue, &info);
@@ -884,7 +903,8 @@ void Renderer::InitSample()
 	VkAttachmentDescription colorAttachment {};
 	colorAttachment.format = window.surfaceFormat.format;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+//	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -920,10 +940,10 @@ void Renderer::InitSample()
 	vertShaderStageInfo.pName = "main";
 
 	VkPipelineShaderStageCreateInfo fragShaderStageInfo {};
-	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	vertShaderStageInfo.module = fragShaderModule;
-	vertShaderStageInfo.pName = "main";
+	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragShaderStageInfo.module = fragShaderModule;
+	fragShaderStageInfo.pName = "main";
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
@@ -1045,10 +1065,11 @@ void Renderer::InitSample()
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = &dynamicState;
 	pipelineInfo.layout = sample.pipelineLayout;
-	pipelineInfo.renderPass = renderPass;
+	pipelineInfo.renderPass = sample.renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.basePipelineIndex = -1;
+
 	if(vkCreateGraphicsPipelines(device->GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &sample.graphicsPipeline) != VK_SUCCESS)
 	{
 		LOGERROR("Pipeline creation failed");
@@ -1063,15 +1084,43 @@ void Renderer::InitSample()
 void Renderer::DrawSample()
 {
 #if 1
+	VkResult err;
+
 	VkFramebuffer framebuffer = frames[window.frameIndex].Framebuffer;
 
 	VkCommandBuffer cmd = frames[window.frameIndex].CommandBuffer;
 
-	// Begin command recording
+    FrameData* fd = &frames[window.frameIndex];
+    {
+        err = vkWaitForFences(device->GetVkDevice(), 1, &fd->QueueSubmitFence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
+        CheckVkResult(err);
+
+        err = vkResetFences(device->GetVkDevice(), 1, &fd->QueueSubmitFence);
+        CheckVkResult(err);
+    }
+
+	//---------------------------------------------
+	// Begin command buffer
+
 	VkCommandBufferBeginInfo begin_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
 	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	VkResult err = vkBeginCommandBuffer(cmd, &begin_info);
+	err = vkBeginCommandBuffer(cmd, &begin_info);
     CheckVkResult(err);
+
+	// Begin the render pass.
+	VkRenderPassBeginInfo rp_begin{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+	rp_begin.renderPass               = sample.renderPass;
+	rp_begin.framebuffer              = framebuffer;
+	rp_begin.renderArea.extent.width  = window.width;
+	rp_begin.renderArea.extent.height = window.height;
+	rp_begin.clearValueCount          = 0;
+	// We will add draw commands in the same command buffer.
+	vkCmdBeginRenderPass(cmd, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdEndRenderPass(cmd);
+
+	//---------------------------------------------
+	// End command buffer
 
 	err = vkEndCommandBuffer(cmd);
     CheckVkResult(err);
@@ -1085,10 +1134,11 @@ void Renderer::DrawSample()
 	info.signalSemaphoreCount = 0;
 	info.pSignalSemaphores    = nullptr;
 	// Submit command buffer to graphics queue
-	err = vkQueueSubmit(graphicsQueue, 1, &info, VK_NULL_HANDLE);
+	err = vkQueueSubmit(graphicsQueue, 1, &info, fd->QueueSubmitFence);
     CheckVkResult(err);
 #endif
 
+// the original sample code...
 #if 0
 	// Render to this framebuffer.
 	VkFramebuffer framebuffer = context.swapchain_framebuffers[swapchain_index];
@@ -1168,11 +1218,15 @@ void Renderer::DrawSample()
 
 void Renderer::DestroySample()
 {
-	// destroy render pass
-	// destroy pipeline
+	LOGVERBOSE("Renderer::DestroySample()");
 
+	LOGVERBOSE("vkDestroyPipeline");
 	vkDestroyPipeline(device->GetVkDevice(), sample.graphicsPipeline, nullptr);
+
+	LOGVERBOSE("vkDestroyPipelineLayout");
 	vkDestroyPipelineLayout(device->GetVkDevice(), sample.pipelineLayout, nullptr);
-	vkDestroyRenderPass(device->GetVkDevice(), renderPass, nullptr);
+
+	LOGVERBOSE("vkDestroyRenderPass");
+	vkDestroyRenderPass(device->GetVkDevice(), sample.renderPass, nullptr);
 }
 
