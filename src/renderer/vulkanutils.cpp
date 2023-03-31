@@ -204,6 +204,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL ValidationReport(	VkDebugReportFlagsEXT flags,
 	}
 	else
 	{
+		LOGWARNING("[vulkan] Validation");
 		LOGWARNINGF("[vulkan]\nDebug report from %s Message: %s", objectTypeStr.c_str(), pMessage);
 	}
 

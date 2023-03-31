@@ -34,8 +34,16 @@
 * General graphics research
 * Electronics simulation
 
+## How I want to bulid it
+
+* Use CMake
+	* Pretty much the standard so learn it
+* Use lots of automated tests - start off with ctest
+	* Get good at automated testig
+	* I don't have time to test this shit manually
+
 ## Stuff I'm not going to worry about
 
-* Platform-abstraction - focus on Linux
+* Platform-abstraction - focus on Linux/Vulkan
 * Bleeding edge performance
-* Multiplayer - internet comms
+* Network stuff
