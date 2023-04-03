@@ -177,6 +177,21 @@ std::string ValidationObjectTypeToString(uint32_t objectType)
 	}
 }
 
+std::string ValidationReportExtractReasonString(const std::string& report)
+{
+	std::string::size_type start = report.find("[");
+	std::string::size_type end = report.find("]");
+
+	return report.substr(start + 2, end - start - 2);
+}
+
+std::string ValidationReportExtractDetailString(const std::string& report)
+{
+	std::string::size_type end = report.rfind("|");
+
+	return report.substr(end + 2);
+}
+
 VKAPI_ATTR VkBool32 VKAPI_CALL ValidationReport(	VkDebugReportFlagsEXT flags, 
 													VkDebugReportObjectTypeEXT objectType, 
 													uint64_t object, 
@@ -194,18 +209,53 @@ VKAPI_ATTR VkBool32 VKAPI_CALL ValidationReport(	VkDebugReportFlagsEXT flags,
 	(void)pLayerPrefix; // Unused arguments
 
 	std::string strMessage = pMessage;
-	bool isError = strMessage.find("Validation Error:") != std::string::npos;
+	ValidationReportType reportType = ValidationReportType::Unknown;
+	ValidationWarningType warningType = ValidationWarningType::Unknown;
+	if(strMessage.find("Warning:") != std::string::npos)
+	{
+		reportType = ValidationReportType::Warning;
+		if(strMessage.find("Performance Warning:") != std::string::npos)
+		{
+			warningType = ValidationWarningType::Performance;
+		}
+	}
+	if(strMessage.find("Error:") != std::string::npos)
+	{
+		reportType = ValidationReportType::Error;
+	}
 
 	std::string objectTypeStr = VulkanUtils::ValidationObjectTypeToString(objectType);
 
-	if(isError)
+	switch(reportType)
 	{
-		LOGERRORF("[vulkan]\nDebug report from %s Message: %s", objectTypeStr.c_str(), pMessage);
-	}
-	else
-	{
-		LOGWARNING("[vulkan] Validation");
-		LOGWARNINGF("[vulkan]\nDebug report from %s Message: %s", objectTypeStr.c_str(), pMessage);
+		case ValidationReportType::Warning:
+			{
+				std::string reason = ValidationReportExtractReasonString(pMessage);
+				std::string detail = ValidationReportExtractDetailString(pMessage);
+
+				switch(warningType)
+				{
+					case ValidationWarningType::Performance:
+						LOGWARNING("[vulkan] --- PERFORMANCE WARNING ---");
+						LOGWARNINGF("[vulkan] from: %s", objectTypeStr.c_str());
+						LOGWARNINGF("[vulkan] reason: %s", reason.c_str());
+						LOGWARNINGF("[vulkan] detail: %s", detail.c_str());
+						LOGWARNING("---");
+						LOGWARNINGF("[vulkan] message: %s", pMessage);
+						LOGWARNING("---");
+						break;
+					default:
+						LOGWARNINGF("[vulkan] Validation WARNING from %s Message: %s", objectTypeStr.c_str(), pMessage);
+						break;
+				}
+			}
+			break;
+		case ValidationReportType::Error:
+			LOGERRORF("[vulkan] Validation ERROR from %s Message: %s", objectTypeStr.c_str(), pMessage);
+			break;
+		default:
+			LOGERRORF("[vulkan] UNKNOWN validation report from %s Message: %s", objectTypeStr.c_str(), pMessage);
+			break;
 	}
 
     return VK_FALSE;

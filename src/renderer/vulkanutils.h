@@ -19,6 +19,18 @@ namespace VulkanUtils
 
 	std::string ValidationObjectTypeToString(uint32_t objectType);
 
+	enum class ValidationReportType
+	{
+		Unknown,
+		Warning,
+		Error
+	};
+	enum class ValidationWarningType
+	{
+		Unknown,
+		Performance
+	};
+
 	VKAPI_ATTR VkBool32 VKAPI_CALL ValidationReport(	VkDebugReportFlagsEXT flags, 
 													VkDebugReportObjectTypeEXT objectType, 
 													uint64_t object, 
