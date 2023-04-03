@@ -20,6 +20,7 @@
 #include <vulkan/vulkan.h>
 
 #include "system/errors.h"
+#include "shadermodulemanager.h"
 
 class SDL_Window;
 class VulkanInstance;
@@ -42,7 +43,8 @@ public:
 	void DrawSample();
 	void DestroySample();
 	std::vector<char> LoadShader(const std::string& filename);
-	VkShaderModule CreateShaderModule(const std::vector<char>& code);
+
+//	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
 	// Debug
 	void DrawVulkanDebugWindow();
@@ -115,6 +117,8 @@ private:
 
 	WindowData 	window;
 	SwapchainData swapchain;
+
+//	ShaderModuleManager shaderModuleManager;
 
     VkAllocationCallbacks*   vkAllocatorCallbacks;
 

@@ -1,7 +1,10 @@
 #include <iostream>
+#include <sstream>
 
 #include "vulkanutils.h"
 #include "system/log.h"
+
+#include "shadermodulemanager.h"
 
 void CheckVkResult(VkResult err)
 {
@@ -192,6 +195,30 @@ std::string ValidationReportExtractDetailString(const std::string& report)
 	return report.substr(end + 2);
 }
 
+std::string ValidationReportExtractObjectNameString(const std::string& report, uint32_t objectType)
+{
+	std::string::size_type start = report.find("handle = ");
+	std::string handleString = report.substr(start + 11, 16);
+
+	uint64_t x;   
+	std::stringstream ss;
+	ss << std::hex << handleString;
+	ss >> x;
+
+	std::string ret = "unknown";
+
+	switch(objectType)
+	{
+		case VK_OBJECT_TYPE_SHADER_MODULE:
+			ret = ShaderModuleManager::GetShaderModuleName(*((VkShaderModule*)&x));		// filthy hack - do this better
+			break;
+		default:
+			break;
+	}
+
+	return ret;
+}
+
 VKAPI_ATTR VkBool32 VKAPI_CALL ValidationReport(	VkDebugReportFlagsEXT flags, 
 													VkDebugReportObjectTypeEXT objectType, 
 													uint64_t object, 
@@ -232,12 +259,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL ValidationReport(	VkDebugReportFlagsEXT flags,
 			{
 				std::string reason = ValidationReportExtractReasonString(pMessage);
 				std::string detail = ValidationReportExtractDetailString(pMessage);
+				std::string objectName = ValidationReportExtractObjectNameString(pMessage, objectType);
 
 				switch(warningType)
 				{
 					case ValidationWarningType::Performance:
 						LOGWARNING("[vulkan] --- PERFORMANCE WARNING ---");
 						LOGWARNINGF("[vulkan] from: %s", objectTypeStr.c_str());
+						LOGWARNINGF("[vulkan] name: %s", objectName.c_str());
 						LOGWARNINGF("[vulkan] reason: %s", reason.c_str());
 						LOGWARNINGF("[vulkan] detail: %s", detail.c_str());
 						LOGWARNING("---");

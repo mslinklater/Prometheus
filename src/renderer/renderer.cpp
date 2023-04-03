@@ -872,6 +872,7 @@ std::vector<char> Renderer::LoadShader(const std::string& filename)
 	return buffer;
 }
 
+#if 0
 VkShaderModule Renderer::CreateShaderModule(const std::vector<char>& code)
 {
 	VkShaderModuleCreateInfo createInfo {};
@@ -887,6 +888,7 @@ VkShaderModule Renderer::CreateShaderModule(const std::vector<char>& code)
 
 	return shaderModule;
 }
+#endif
 
 void Renderer::InitSample()
 {
@@ -895,8 +897,8 @@ void Renderer::InitSample()
 	auto vertShaderCode = LoadShader("shaders/triangle_vert.spv");
 	auto fragShaderCode = LoadShader("shaders/triangle_frag.spv");
 
-	VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
-	VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
+	VkShaderModule vertShaderModule = ShaderModuleManager::CreateShaderModule(device->GetVkDevice(), vertShaderCode, "triangle_vert.spv");
+	VkShaderModule fragShaderModule = ShaderModuleManager::CreateShaderModule(device->GetVkDevice(), fragShaderCode, "triangle_frag.spv");
 
 	//----- Render pass
 
@@ -1077,8 +1079,8 @@ void Renderer::InitSample()
 
 	//---------------------------------
 	// Cleanup...
-	vkDestroyShaderModule(device->GetVkDevice(), fragShaderModule, nullptr);
-	vkDestroyShaderModule(device->GetVkDevice(), vertShaderModule, nullptr);
+	ShaderModuleManager::DestroyShaderModule(device->GetVkDevice(), fragShaderModule);
+	ShaderModuleManager::DestroyShaderModule(device->GetVkDevice(), vertShaderModule);
 }
 
 void Renderer::DrawSample()
