@@ -269,9 +269,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL ValidationReport(	VkDebugReportFlagsEXT flags,
 						LOGWARNINGF("[vulkan] name: %s", objectName.c_str());
 						LOGWARNINGF("[vulkan] reason: %s", reason.c_str());
 						LOGWARNINGF("[vulkan] detail: %s", detail.c_str());
-						LOGWARNING("---");
-						LOGWARNINGF("[vulkan] message: %s", pMessage);
-						LOGWARNING("---");
+						LOGINFO("---");
+						LOGINFOF("[vulkan] message: %s", pMessage);
+						LOGINFO("---");
 						break;
 					default:
 						LOGWARNINGF("[vulkan] Validation WARNING from %s Message: %s", objectTypeStr.c_str(), pMessage);
@@ -280,7 +280,24 @@ VKAPI_ATTR VkBool32 VKAPI_CALL ValidationReport(	VkDebugReportFlagsEXT flags,
 			}
 			break;
 		case ValidationReportType::Error:
-			LOGERRORF("[vulkan] Validation ERROR from %s Message: %s", objectTypeStr.c_str(), pMessage);
+			{
+				switch(objectType)
+				{
+					case VK_OBJECT_TYPE_RENDER_PASS:
+						{
+							std::string reason = ValidationReportExtractReasonString(pMessage);
+							std::string detail = ValidationReportExtractDetailString(pMessage);
+							std::string objectName = ValidationReportExtractObjectNameString(pMessage, objectType);
+
+						}
+						break;
+					default:
+						LOGERRORF("[vulkan] Validation ERROR from %s Message: %s", objectTypeStr.c_str(), pMessage);
+						break;
+				}
+
+
+			}
 			break;
 		default:
 			LOGERRORF("[vulkan] UNKNOWN validation report from %s Message: %s", objectTypeStr.c_str(), pMessage);

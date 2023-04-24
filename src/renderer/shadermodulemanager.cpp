@@ -1,8 +1,11 @@
+// [+Header]
+// [-Header]
 #include "shadermodulemanager.h"
 
 #include "system/log.h"
+#include "vulkanhandlemanager.h"
 
-static std::map<VkShaderModule, std::string> moduleToNameMap;
+//static std::map<VkShaderModule, std::string> moduleToNameMap;
 
 VkShaderModule ShaderModuleManager::CreateShaderModule(VkDevice device, const std::vector<char>& code, const std::string& name)
 {
@@ -17,7 +20,8 @@ VkShaderModule ShaderModuleManager::CreateShaderModule(VkDevice device, const st
 		LOGERROR("vkCreateShaderModule failed");
 	}
 
-	moduleToNameMap[shaderModule] = name;
+//	moduleToNameMap[shaderModule] = name;
+	VulkanHandleManager::AddHandle((void*)shaderModule, name);
 
 	return shaderModule;
 }
@@ -25,12 +29,14 @@ VkShaderModule ShaderModuleManager::CreateShaderModule(VkDevice device, const st
 void ShaderModuleManager::DestroyShaderModule(VkDevice device, VkShaderModule module)
 {
 	vkDestroyShaderModule(device, module, nullptr);
-	moduleToNameMap.erase(module);
+//	moduleToNameMap.erase(module);
+	VulkanHandleManager::RemoveHandle((void*)module);
 }
 
 std::string ShaderModuleManager::GetShaderModuleName(VkShaderModule module)
 {
 	// TODO: Needs error handling
-	return moduleToNameMap[module];
+//	return moduleToNameMap[module];
+	return VulkanHandleManager::GetName((void*)module);
 }
 
