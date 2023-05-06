@@ -757,7 +757,6 @@ void Renderer::BeginFrame()
 	// begin frame Vulkan setup
 }
 
-
 void Renderer::ImGuiRender(ImDrawData* draw_data)
 {
     VkResult err;
