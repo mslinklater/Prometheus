@@ -2,7 +2,7 @@
 #include "vulkanutils.h"
 #include "system/log.h"
 #include "system/config.h"
-#include "vulkan/vk_layer_utils.h"
+//#include "vulkan/vk_layer_utils.h"
 
 #include "imgui.h"
 
@@ -95,8 +95,8 @@ void VulkanPhysicalDevice::DrawDebug()
 				break;
 		}
 
-		ImGui::Text("API Version %s", StringAPIVersion(properties.apiVersion).c_str());
-		ImGui::Text("Driver Version %s", StringAPIVersion(properties.driverVersion).c_str());
+		ImGui::Text("API Version %u", properties.apiVersion);
+		ImGui::Text("Driver Version %u", properties.driverVersion);
 		ImGui::Text("VendorID 0x%04x %s", properties.vendorID, VulkanUtils::VendorIDToString(properties.vendorID).c_str());
 		ImGui::Text("DeviceID 0x%04x", properties.deviceID);
 		if (ImGui::TreeNode("Limits"))
@@ -183,7 +183,7 @@ void VulkanPhysicalDevice::DrawDebug()
 				ImGui::Text("Max vertex output components %d", properties.limits.maxVertexOutputComponents);
 				ImGui::TreePop();
 			}
-			ImGui::Text("Buffer image granularity %lu", properties.limits.bufferImageGranularity);
+			ImGui::Text("Buffer image granularity %llu", properties.limits.bufferImageGranularity);
 			ImGui::Text("Discrete queue priorities %u", properties.limits.discreteQueuePriorities);
 			ImGui::Text("Line width granularity %f", properties.limits.lineWidthGranularity);
 			ImGui::Text("Line width range %f-%f", properties.limits.lineWidthRange[0], properties.limits.lineWidthRange[1]);
@@ -330,7 +330,7 @@ void VulkanPhysicalDevice::DrawDebug()
 					sprintf(&buffer[0], "Heap %d", i);
 					if (ImGui::TreeNode(buffer))
 					{
-						ImGui::Text("Size %lu MB", memoryProperties.memoryHeaps[i].size / (1024 * 1024));
+						ImGui::Text("Size %llu MB", memoryProperties.memoryHeaps[i].size / (1024 * 1024));
 						if(memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) { ImGui::Text("Device local"); }
 						if(memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) { ImGui::Text("Multi instance"); }
 						if(memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT_KHR) { ImGui::Text("Multi instance KHR"); }
@@ -384,8 +384,8 @@ void VulkanPhysicalDevice::LogDeviceInfo()
 	LOGINFO("");
 	// Properties
 	LOGINFOF("Name: %s", properties.deviceName);
-    LOGINFOF("API version: %s", StringAPIVersion(properties.apiVersion).c_str());
-    LOGINFOF("Driver version: %s", StringAPIVersion(properties.driverVersion).c_str());
+    LOGINFOF("API version: %u", properties.apiVersion);
+    LOGINFOF("Driver version: %u", properties.driverVersion);
     LOGINFOF("Vendor id: %04x", properties.vendorID);
     LOGINFOF("Device id: %04x", properties.deviceID);
 	if(properties.deviceType & VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)

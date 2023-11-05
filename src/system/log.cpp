@@ -186,7 +186,6 @@ void Log::Warningf(const char *fmt, ...)
     newLine.type = kWarning;
 
     AddLine(newLine);
-    printf("Warning:%s\n", newLine.content.c_str());
 }
 
 void Log::Error(const std::string& line)

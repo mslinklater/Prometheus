@@ -10,7 +10,14 @@ void CheckVkResult(VkResult err)
 {
     if (err == 0)
         return;
-    fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+	switch(err)
+	{
+		case VK_ERROR_INCOMPATIBLE_DRIVER:
+			std::cerr << "[vulkan] Error: VkResult = VK_ERROR_INCOMPATIBLE_DRIVER";
+			break;
+		default:
+		    std::cerr << "[vulkan] Error: VkResult = " << err;
+	}
     if (err < 0)
         abort();
 }

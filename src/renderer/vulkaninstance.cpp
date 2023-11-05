@@ -44,7 +44,7 @@ VulkanInstance::VulkanInstance(VkAllocationCallbacks* vkAllocatorCallbacks, bool
     VkInstanceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pNext = nullptr;
-	createInfo.flags = 0;
+	createInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 	createInfo.pApplicationInfo = &applicationInfo;
     createInfo.enabledExtensionCount = requiredInstanceExtensions.size();
     createInfo.ppEnabledExtensionNames = requiredInstanceExtensions.data();
@@ -115,7 +115,7 @@ void VulkanInstance::SetupInstanceLayers(bool validation)
     availableInstanceLayers.resize(numAvailableInstanceLayers);
     vkEnumerateInstanceLayerProperties(&numAvailableInstanceLayers, &availableInstanceLayers[0]);
 
-	if(Config::GetBool("vulkan.instance.loginfo.layers"))
+	if(Config::GetBool("vulkan.instance.loginfo.availablelayers"))
 	{
 		LOGINFO("Vulkan::Available instance layers...");
 		for(auto layerinfo : availableInstanceLayers)
@@ -149,7 +149,7 @@ void VulkanInstance::SetupInstanceLayers(bool validation)
 
 void VulkanInstance::SetupInstanceExtensions(bool validation, SDL_Window* sdlWindow)
 {
-	if(Config::GetBool("vulkan.instance.loginfo.extensions"))
+	if(Config::GetBool("vulkan.instance.loginfo.availableextensions"))
 	{
 		uint32_t numInstanceExtensions;
 		vkEnumerateInstanceExtensionProperties(nullptr, &numInstanceExtensions, nullptr);
@@ -176,6 +176,9 @@ void VulkanInstance::SetupInstanceExtensions(bool validation, SDL_Window* sdlWin
 	{
 		requiredInstanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 	}
+	#ifdef __APPLE__
+	requiredInstanceExtensions.push_back("VK_KHR_portability_enumeration");
+	#endif
 
 	//TODO: Check all required extensions are in fact available
 }

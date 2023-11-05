@@ -29,8 +29,8 @@
 [bool]instance.loginfo.layers=true
 
 [bool]devices.loginfo=true
-[bool]devices.loginfo.layers=false
-[bool]devices.loginfo.extensions=false
+[bool]devices.loginfo.availablelayers=true
+[bool]devices.loginfo.availableextensions=true
 [bool]devices.loginfo.features=false
 [bool]devices.loginfo.limits=false
 [bool]devices.loginfo.memory=false
@@ -38,6 +38,7 @@
 [bool]devices.excludecputype=true
 
 [bool]debug=true
+[bool]fatalerrors=true
 
 [bool]require.queue.graphics=true
 [bool]require.queue.compute=false

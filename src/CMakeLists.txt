@@ -6,7 +6,7 @@ find_package(SDL2 REQUIRED)
 find_package(Vulkan REQUIRED)
 
 set(CMAKE_C_FLAGS "-DVK_ENABLE_BETA_EXTENSIONS -D_DEBUG")
-set(CMAKE_CXX_FLAGS "-DVK_ENABLE_BETA_EXTENSIONS -D_DEBUG")
+set(CMAKE_CXX_FLAGS "-DVK_ENABLE_BETA_EXTENSIONS -D_DEBUG -std=c++17 -Wno-enum-compare-switch")
 
 set(SOURCE_FILES main.cpp)
 #set(IMGUI_PATH "3rdparty/imgui-1.89.2")

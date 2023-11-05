@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sstream>
 #include <unistd.h>
+#include <filesystem>
 
 namespace Config
 {
@@ -58,7 +59,7 @@ void Initialise()
 
     if (hFile == nullptr)
     {
-        LOGFATALF("Config::Unable to find config file. cwd:%s", get_current_dir_name());
+        LOGFATALF("Config::Unable to find config file. cwd:%s", std::filesystem::current_path().c_str());
     }
     else
     {

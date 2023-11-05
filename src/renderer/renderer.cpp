@@ -859,7 +859,7 @@ std::vector<char> Renderer::LoadShader(const std::string& filename)
 
 	if(!file.is_open())
 	{
-		LOGERRORF("failed to open shader file %s", filename.c_str());
+		LOGFATALF("failed to open shader file %s", filename.c_str());
 	}
 
 	size_t fileSize = (size_t)file.tellg();
