@@ -25,12 +25,12 @@
 ; Instance
 [bool]instance.validation=true
 [bool]instance.loginfo=true
-[bool]instance.loginfo.extensions=true
-[bool]instance.loginfo.layers=true
+[bool]instance.loginfo.availableextensions=true
+[bool]instance.loginfo.availablelayers=true
 
 [bool]devices.loginfo=true
-[bool]devices.loginfo.availablelayers=true
-[bool]devices.loginfo.availableextensions=true
+[bool]devices.loginfo.layers=true
+[bool]devices.loginfo.extensions=true
 [bool]devices.loginfo.features=false
 [bool]devices.loginfo.limits=false
 [bool]devices.loginfo.memory=false

@@ -69,6 +69,8 @@ void VulkanPhysicalDevice::SetVkPhysicalDevice(VkPhysicalDevice deviceIn)
 	        transferQueueIndex = iQueue;
         }
 	}
+
+	LogDeviceInfo();
 }
 
 void VulkanPhysicalDevice::DrawDebug()
